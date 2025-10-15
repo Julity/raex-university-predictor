@@ -30,39 +30,43 @@ class SimpleRankPredictor(nn.Module):
 
 class RAPredictor:
     
+ # predictor.py - ЗАМЕНИТЕ блок __init__
     def __init__(self, model_type='best'):
-        """  Инициализация предсказателя"""
+        """Инициализация предсказателя для Streamlit Cloud"""
+        
+        # Определяем базовую директорию
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Пробуем разные пути для Streamlit Cloud
         possible_paths = [
-            "models",                           # Локальная разработка
-            "app/models",                       # Streamlit Cloud структура 1
-            "../models",                        # Streamlit Cloud структура 2
-            os.path.join(os.path.dirname(__file__), "..", "models")  # Абсолютный путь
+            os.path.join(current_dir, "models"),                    # Локальная разработка
+            os.path.join(current_dir, "..", "models"),              # Streamlit структура 1
+            os.path.join(current_dir, "app", "models"),             # Streamlit структура 2
+            "/app/models",                                          # Absolute path в Streamlit
+            "models"                                                # Относительный путь
         ]
         
         model_path = None
         for path in possible_paths:
-            if os.path.exists(path):
-                model_path = path
+            abs_path = os.path.abspath(path)
+            if os.path.exists(abs_path):
+                model_path = abs_path
+                logging.info(f"✅ Найдена папка models: {abs_path}")
                 break
         
         if model_path is None:
-            # Если ничего не нашли, покажем что есть
+            # Диагностика для Streamlit
             current_dir = os.getcwd()
-            st.error(f"Папка models не найдена! Текущая директория: {current_dir}")
-            st.error(f"Содержимое директории: {os.listdir('.')}")
-            raise FileNotFoundError("Папка models не найдена ни по одному из путей")
+            logging.error(f"❌ Папка models не найдена! Текущая директория: {current_dir}")
+            logging.error(f"📁 Содержимое директории: {os.listdir('.')}")
+            raise FileNotFoundError("Папка models не найдена")
         
-        logging.info(f"Используется путь к моделям: {model_path}")
+        logging.info(f"📂 Используется путь к моделям: {model_path}")
         
-        # Дальше ваш существующий код...
+        # Загрузка модели (остальной код без изменений)
         model_info_path = f"{model_path}/model_info.pkl"
         if not os.path.exists(model_info_path):
             raise FileNotFoundError(f"Модели не найдены по пути: {model_info_path}")
-        
-        # Загрузка информации о моделях
-        model_info_path = f"{model_path}/model_info.pkl"
-        if not os.path.exists(model_info_path):
-            raise FileNotFoundError("Модели не найдены. Сначала обучите модели.")
         
         self.model_info = load(model_info_path)
         
