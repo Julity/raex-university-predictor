@@ -1,9 +1,8 @@
-streamlit
-pandas
-numpy
-scikit-learn
-xgboost
-joblib
-torch
-shap
-plotly
+streamlit==1.36.0
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.7.1  # ⚠️ ТА ЖЕ ВЕРСИЯ что и при обучении!
+xgboost==2.1.1        # ⚠️ ТА ЖЕ ВЕРСИЯ что и при обучении!
+joblib==1.4.2
+torch==2.3.1
+shap==0.45.1
