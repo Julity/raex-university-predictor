@@ -123,41 +123,41 @@ if uploaded_file is not None:
             st.session_state.use_csv = True
             st.rerun()
 
-# Кнопка для заполнения данными Бауманки в сайдбаре
-if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
-    # Данные для Бауманки
-    bmstu_data = {
-        # Академические показатели
-        'egescore_avg': 80.83, 'egescore_contract': 71.98, 'egescore_min': 54.55,
-        'olympiad_winners': 8, 'olympiad_other': 236, 'competition': 5.0,
-        # Целевой прием и магистратура
-        'target_admission_share': 13.59, 'target_contract_in_tech': 20.37,
-        'magistracy_share': 10.30, 'aspirantura_share': 2.70,
-        'external_masters': 98.72, 'external_grad_share': 47.70,
-        'aspirants_per_100_students': 3.70,
-        # Международная деятельность
-        'foreign_students_share': 5.71, 'foreign_non_cis': 3.70, 'foreign_cis': 2.01,
-        'foreign_graduated': 7.66, 'mobility_outbound': 0.07,
-        'foreign_staff_share': 0.22, 'foreign_professors': 0,
-        # Научная деятельность
-        'niokr_total': 3982904.40, 'niokr_share_total': 22.40, 'niokr_own_share': 84.29,
-        'niokr_per_npr': 1919.01, 'scopus_publications': 160.44, 'risc_publications': 160.44,
-        'risc_citations': 409.68, 'foreign_niokr_income': 0.00, 'journals_published': 13,
-        'grants_per_100_npr': 2.84,
-        # Финансовые показатели
-        'foreign_edu_income': 31664.10, 'total_income_per_student': 827.28,
-        'self_income_per_npr': 1939.98, 'self_income_share': 22.59,
-        'ppc_salary_index': 200.57, 'avg_salary_grads': 100.0,
-        # Инфраструктура и кадры
-        'npr_with_degree_percent': 62.89, 'npr_per_100_students': 5.77,
-        'young_npr_share': 13.63, 'lib_books_per_student': 106.41,
-        'area_per_student': 10.36, 'pc_per_student': 0.36
-    }
+# # Кнопка для заполнения данными Бауманки в сайдбаре
+# if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
+#     # Данные для Бауманки
+#     bmstu_data = {
+#         # Академические показатели
+#         'egescore_avg': 80.83, 'egescore_contract': 71.98, 'egescore_min': 54.55,
+#         'olympiad_winners': 8, 'olympiad_other': 236, 'competition': 5.0,
+#         # Целевой прием и магистратура
+#         'target_admission_share': 13.59, 'target_contract_in_tech': 20.37,
+#         'magistracy_share': 10.30, 'aspirantura_share': 2.70,
+#         'external_masters': 98.72, 'external_grad_share': 47.70,
+#         'aspirants_per_100_students': 3.70,
+#         # Международная деятельность
+#         'foreign_students_share': 5.71, 'foreign_non_cis': 3.70, 'foreign_cis': 2.01,
+#         'foreign_graduated': 7.66, 'mobility_outbound': 0.07,
+#         'foreign_staff_share': 0.22, 'foreign_professors': 0,
+#         # Научная деятельность
+#         'niokr_total': 3982904.40, 'niokr_share_total': 22.40, 'niokr_own_share': 84.29,
+#         'niokr_per_npr': 1919.01, 'scopus_publications': 160.44, 'risc_publications': 160.44,
+#         'risc_citations': 409.68, 'foreign_niokr_income': 0.00, 'journals_published': 13,
+#         'grants_per_100_npr': 2.84,
+#         # Финансовые показатели
+#         'foreign_edu_income': 31664.10, 'total_income_per_student': 827.28,
+#         'self_income_per_npr': 1939.98, 'self_income_share': 22.59,
+#         'ppc_salary_index': 200.57, 'avg_salary_grads': 100.0,
+#         # Инфраструктура и кадры
+#         'npr_with_degree_percent': 62.89, 'npr_per_100_students': 5.77,
+#         'young_npr_share': 13.63, 'lib_books_per_student': 106.41,
+#         'area_per_student': 10.36, 'pc_per_student': 0.36
+#     }
     
-    st.session_state.csv_data = bmstu_data
-    st.session_state.use_csv = True
-    st.session_state.bmstu_loaded = True
-    st.rerun()
+#     st.session_state.csv_data = bmstu_data
+#     st.session_state.use_csv = True
+#     st.session_state.bmstu_loaded = True
+#     st.rerun()
 
 # Форма ввода данных
 with st.form("input_form"):
@@ -392,6 +392,8 @@ if submitted and predictor is not None:
     st.session_state["use_csv"] = False  # Сбрасываем флаг использования CSV
     st.session_state["bmstu_loaded"] = False  # Сбрасываем флаг Бауманки
     
+    
+
     user_df = pd.DataFrame([input_data])
     
     # Убедимся, что все признаки присутствуют и в правильном порядке

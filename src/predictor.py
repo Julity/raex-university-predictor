@@ -7,7 +7,7 @@ import itertools
 import torch
 import torch.nn as nn
 import logging
-from config import feature_order, feature_weights
+from config import feature_order, feature_weights, realistic_ranges, weak_features
 
 # Упрощенная нейросеть (такая же как в train_model.py)
 class SimpleRankPredictor(nn.Module):
@@ -101,36 +101,80 @@ class RAPredictor:
                 raise FileNotFoundError("XGBoost модель не найдена")
             self.model = load(xgb_model_path)
         
-        self.feature_order = feature_order
-        logging.info(f"Загружен предсказатель с моделью: {self.model_type}")
-
+        self.feature_order = self.model_info['feature_order']
+        current_features = feature_order
+        saved_features = self.model_info['feature_order']
+        
+        if current_features != saved_features:
+            logging.warning("Порядок признаков в config.py не совпадает с обученной моделью!")
+            logging.warning(f"Используется порядок из обученной модели")
+        
+        logging.info(f"Загружен порядок признаков: {len(self.feature_order)} признаков")
+    def validate_realism(self, df):
+        """Проверка реалистичности входных данных"""
+        reasonable_ranges = {
+            'egescore_avg': (50, 100),
+            'egescore_contract': (40, 100),
+            'egescore_min': (30, 100),
+            'olympiad_winners': (0, 300),
+            'scopus_publications': (0, 10000),
+            'niokr_total': (0, 10000000),
+            'avg_salary_grads': (20, 200),
+            'foreign_students_share': (0, 50)
+        }
+        
+        warnings = []
+        for feat, (min_val, max_val) in reasonable_ranges.items():
+            value = df[feat].iloc[0]
+            if value < min_val:
+                warnings.append(f"⚠️ {feat}={value} СЛИШКОМ НИЗКИЙ (минимум {min_val})")
+            elif value > max_val:
+                warnings.append(f"⚠️ {feat}={value} СЛИШКОМ ВЫСОКИЙ (максимум {max_val})")
+        
+        return warnings
     def prepare_input(self, df: pd.DataFrame) -> pd.DataFrame:
         missing = set(self.feature_order) - set(df.columns)
         if missing:
             raise ValueError(f"Входные данные не содержат признаки: {missing}")
         df_ordered = df[self.feature_order].copy()
-        
-        # применяем весовые коэффициенты
-        for feat in self.feature_order:
-            weight = feature_weights.get(feat, 1.0)
-            df_ordered[feat] = df_ordered[feat] * weight
-        
+                
         return df_ordered
+       
+    def normalize_weights(weights):
+        """Нормализует веса к 100%"""
+        total = sum(weights.values())
+        return {k: v/total for k, v in weights.items()}
 
     def predict_rank(self, df: pd.DataFrame) -> float:
         df_ordered = self.prepare_input(df)
         scaled_df = pd.DataFrame(self.scaler.transform(df_ordered), columns=df_ordered.columns)
         
+        # ДЕБАГ: вывести первые несколько значений
+        print("=== ДЕБАГ ПРЕДСКАЗАНИЯ ===")
+        print(f"egescore_avg после подготовки: {df_ordered['egescore_avg'].iloc[0]}")
+        print(f"egescore_avg после масштабирования: {scaled_df['egescore_avg'].iloc[0]}")
+        
         if self.model_type == 'neural_network':
-            # Предсказание нейросетью
             with torch.no_grad():
                 X_tensor = torch.FloatTensor(scaled_df.values).to(self.device)
-                pred = self.model(X_tensor).cpu().numpy()[0][0]
+                pred_score = self.model(X_tensor).cpu().numpy()[0][0]
         else:
-            # Предсказание XGBoost
-            pred = self.model.predict(scaled_df)[0]
+            pred_score = self.model.predict(scaled_df)[0]
         
-        return max(1, round(pred))  # Ранг не может быть меньше 1
+        print(f"Предсказанный балл: {pred_score}")
+        
+        # ВАЖНО: преобразуем score обратно в ранг в зависимости от метода
+        if hasattr(self, 'model_info') and self.model_info.get('target_transform') == 'raex_scores':
+            from config import scores_to_ranks
+            pred_rank = scores_to_ranks(pred_score)
+        elif hasattr(self, 'model_info') and self.model_info.get('target_transform') == 'inverse_rank':
+            pred_rank = 1000 / pred_score
+        else:
+            pred_rank = pred_score
+        
+        predicted_rank = max(1, min(500, round(pred_rank)))
+        
+        return predicted_rank
 
     def suggest_improvement(self, df: pd.DataFrame, desired_top: int, current_rank: float = None, allowed_features: list = None):
         """
@@ -142,7 +186,7 @@ class RAPredictor:
         allowed_features: список признаков, которые можно улучшать
         """
         import numpy as np
-
+        
         # Если текущий ранг не передан — предсказываем
         if current_rank is None:
             current_rank = float(self.predict_rank(df))
