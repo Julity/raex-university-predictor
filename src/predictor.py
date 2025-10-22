@@ -30,43 +30,39 @@ class SimpleRankPredictor(nn.Module):
 
 class RAPredictor:
     
- # predictor.py - ЗАМЕНИТЕ блок __init__
     def __init__(self, model_type='best'):
-        """Инициализация предсказателя для Streamlit Cloud"""
-        
-        # Определяем базовую директорию
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Пробуем разные пути для Streamlit Cloud
+        """  Инициализация предсказателя"""
         possible_paths = [
-            os.path.join(current_dir, "models"),                    # Локальная разработка
-            os.path.join(current_dir, "..", "models"),              # Streamlit структура 1
-            os.path.join(current_dir, "app", "models"),             # Streamlit структура 2
-            "/app/models",                                          # Absolute path в Streamlit
-            "models"                                                # Относительный путь
+            "models",                           # Локальная разработка
+            "app/models",                       # Streamlit Cloud структура 1
+            "../models",                        # Streamlit Cloud структура 2
+            os.path.join(os.path.dirname(__file__), "..", "models")  # Абсолютный путь
         ]
         
         model_path = None
         for path in possible_paths:
-            abs_path = os.path.abspath(path)
-            if os.path.exists(abs_path):
-                model_path = abs_path
-                logging.info(f"✅ Найдена папка models: {abs_path}")
+            if os.path.exists(path):
+                model_path = path
                 break
         
         if model_path is None:
-            # Диагностика для Streamlit
+            # Если ничего не нашли, покажем что есть
             current_dir = os.getcwd()
-            logging.error(f"❌ Папка models не найдена! Текущая директория: {current_dir}")
-            logging.error(f"📁 Содержимое директории: {os.listdir('.')}")
-            raise FileNotFoundError("Папка models не найдена")
+            st.error(f"Папка models не найдена! Текущая директория: {current_dir}")
+            st.error(f"Содержимое директории: {os.listdir('.')}")
+            raise FileNotFoundError("Папка models не найдена ни по одному из путей")
         
-        logging.info(f"📂 Используется путь к моделям: {model_path}")
+        logging.info(f"Используется путь к моделям: {model_path}")
         
-        # Загрузка модели (остальной код без изменений)
+        # Дальше ваш существующий код...
         model_info_path = f"{model_path}/model_info.pkl"
         if not os.path.exists(model_info_path):
             raise FileNotFoundError(f"Модели не найдены по пути: {model_info_path}")
+        
+        # Загрузка информации о моделях
+        model_info_path = f"{model_path}/model_info.pkl"
+        if not os.path.exists(model_info_path):
+            raise FileNotFoundError("Модели не найдены. Сначала обучите модели.")
         
         self.model_info = load(model_info_path)
         
@@ -153,11 +149,6 @@ class RAPredictor:
         df_ordered = self.prepare_input(df)
         scaled_df = pd.DataFrame(self.scaler.transform(df_ordered), columns=df_ordered.columns)
         
-        # ДЕБАГ: вывести первые несколько значений
-        print("=== ДЕБАГ ПРЕДСКАЗАНИЯ ===")
-        print(f"egescore_avg после подготовки: {df_ordered['egescore_avg'].iloc[0]}")
-        print(f"egescore_avg после масштабирования: {scaled_df['egescore_avg'].iloc[0]}")
-        
         if self.model_type == 'neural_network':
             with torch.no_grad():
                 X_tensor = torch.FloatTensor(scaled_df.values).to(self.device)
@@ -165,18 +156,34 @@ class RAPredictor:
         else:
             pred_score = self.model.predict(scaled_df)[0]
         
-        print(f"Предсказанный балл: {pred_score}")
+        print(f"Предсказанный балл RAEX: {pred_score}")
         
-        # ВАЖНО: преобразуем score обратно в ранг в зависимости от метода
-        if hasattr(self, 'model_info') and self.model_info.get('target_transform') == 'raex_scores':
-            from config import scores_to_ranks
-            pred_rank = scores_to_ranks(pred_score)
-        elif hasattr(self, 'model_info') and self.model_info.get('target_transform') == 'inverse_rank':
-            pred_rank = 1000 / pred_score
-        else:
-            pred_rank = pred_score
+        # РЕАЛИСТИЧНОЕ ПРЕОБРАЗОВАНИЕ НА ОСНОВЕ РЕАЛЬНЫХ ДАННЫХ RAEX
+        # Топ-вузы: 95-100 баллов, средние: 70-85, слабые: 0-70
+        if pred_score >= 95:    # Топ-5
+            pred_rank = 1 + (100 - pred_score) * 0.25
+        elif pred_score >= 90:  # Топ-10
+            pred_rank = 5 + (95 - pred_score) * 1.0
+        elif pred_score >= 85:  # Топ-20
+            pred_rank = 10 + (90 - pred_score) * 2.0
+        elif pred_score >= 75:  # Топ-50
+            pred_rank = 20 + (85 - pred_score) * 3.0
+        elif pred_score >= 70:  # Топ-100
+            pred_rank = 50 + (80 - pred_score) * 5.0
+        elif pred_score >= 60:  # Топ-200
+            pred_rank = 100 + (70 - pred_score) * 10.0
+        elif pred_score >= 50:  # Топ-300
+            pred_rank = 200 + (60 - pred_score) * 10.0
+        elif pred_score >= 40:  # Топ-400
+            pred_rank = 300 + (50 - pred_score) * 10.0
+        elif pred_score >= 30:  # Топ-500
+            pred_rank = 400 + (40 - pred_score) * 10.0
+        else:                   # 500+
+            pred_rank = 500 + (30 - pred_score) * 16.67
         
-        predicted_rank = max(1, min(500, round(pred_rank)))
+        predicted_rank = max(1, min(1000, round(pred_rank)))
+        
+        print(f"Преобразованный ранг: {predicted_rank}")
         
         return predicted_rank
 
@@ -280,7 +287,7 @@ class RAPredictor:
             "competition": 50,
             "scopus_publications": 10000,
             "niokr_total": 1e9,
-            "avg_salary_grads": 500,
+            "avg_salary_grads": 1000,
         }
         
         if feature in reasonable_maxes:

@@ -233,15 +233,15 @@ SCORING_METHOD = "raex_scores"  # Добавить эту строку
 
 def transform_to_raex_scores(y):
     """Преобразует ранги в баллы по методике RAEX"""
-    max_rank = 500
+    max_rank = 1000
     min_rank = 1
-    # Линейное преобразование: ранг 1 -> 100 баллов, ранг 500 -> 0 баллов
+    # Линейное преобразование: ранг 1 -> 100 баллов, ранг 1000 -> 0 баллов
     scores = 100 * (max_rank - y) / (max_rank - min_rank)
     return scores
 
 def scores_to_ranks(scores):
     """Преобразует баллы обратно в ранги"""
-    max_rank = 500
+    max_rank = 1000
     min_rank = 1
     ranks = max_rank - (scores * (max_rank - min_rank) / 100)
     return ranks.round().astype(int)
