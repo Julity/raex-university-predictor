@@ -104,40 +104,25 @@ if 'use_csv' not in st.session_state:
     st.session_state.use_csv = False
 if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
-# ДОБАВЬТЕ в начало инициализации session_state:
-if 'form_initialized' not in st.session_state:
-    st.session_state.form_initialized = False
-if 'csv_applied' not in st.session_state:
-    st.session_state.csv_applied = False
 
-# ЗАМЕНИТЕ весь блок CSV обработки на:
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
-    # Сбрасываем флаги при новой загрузке файла
-    if 'current_file' not in st.session_state or st.session_state.current_file != uploaded_file.name:
-        st.session_state.use_csv = False
-        st.session_state.bmstu_loaded = False
-        st.session_state.csv_applied = False
-        st.session_state.form_initialized = False
-        st.session_state.current_file = uploaded_file.name
-    
     result = process_csv_file(uploaded_file)
     if result:
         csv_data, full_df = result
         st.session_state.csv_data = csv_data
-        st.sidebar.success("✅ Файл успешно загружен!")
+        st.sidebar.success("✅ Данные из CSV готовы к использованию")
         
-        # Показываем превью
+        # Показываем превью данных
         if st.sidebar.checkbox("Показать превью данных"):
             st.sidebar.write("**Первые 5 записей:**")
             st.sidebar.dataframe(full_df.head())
         
-        # Автоматически применяем данные если они еще не применены
-        if not st.session_state.csv_applied:
+        # Кнопка для использования данных из CSV
+        if st.sidebar.button("📊 Использовать данные из CSV"):
             st.session_state.use_csv = True
-            st.session_state.csv_applied = True
-            st.session_state.form_initialized = False
             st.rerun()
+
 # # Кнопка для заполнения данными Бауманки в сайдбаре
 # if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
 #     # Данные для Бауманки
@@ -173,21 +158,9 @@ if uploaded_file is not None:
 #     st.session_state.use_csv = True
 #     st.session_state.bmstu_loaded = True
 #     st.rerun()
-# После превью данных ДОБАВЬТЕ:
-
-# Форма ввода данных
-# Принудительное обновление формы при применении CSV данных
-if st.session_state.get('use_csv', False) and st.session_state.get('csv_data'):
-    if not st.session_state.get('form_initialized', False):
-        st.session_state.form_initialized = True
-        st.rerun()
 
 # Форма ввода данных
 with st.form("input_form"):
-    # Показываем статус применения данных
-    if st.session_state.get("use_csv", False) and st.session_state.get("csv_data", {}):
-        st.info("📊 Используются данные из загруженного CSV файла")
-    
     st.write("Введите данные по вузу:")
     input_data = {}
     
@@ -195,7 +168,6 @@ with st.form("input_form"):
     use_csv_data = st.session_state.get("use_csv", False)
     csv_defaults = st.session_state.get("csv_data", {})
     
- 
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
         if st.session_state.get("bmstu_loaded", False):
@@ -211,8 +183,7 @@ with st.form("input_form"):
     ]
     for feat in academic_features:
         if feat in feature_order:
-            default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!            if "egescore" in feat:
-               
+            default_val = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
             if "egescore" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
                                             key=f"slider_academic_{feat}",
@@ -234,7 +205,7 @@ with st.form("input_form"):
     ]
     for feat in target_features:
         if feat in feature_order:
-            default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!
+            default_val = csv_defaults.get(feat, 10.0 if "share" in feat else (2.0 if "aspirants" in feat else 15.0))
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_target_{feat}",
@@ -260,7 +231,7 @@ with st.form("input_form"):
     ]
     for feat in international_features:
         if feat in feature_order:
-            default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!
+            default_val = csv_defaults.get(feat, 5.0 if "share" in feat else (2 if feat == "foreign_professors" else 2.0))
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
                                             key=f"slider_int_{feat}",
@@ -295,7 +266,7 @@ with st.form("input_form"):
     for feat in research_features:
         if feat in feature_order:
             if "share" in feat or "percent" in feat:
-                default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!
+                default_val = csv_defaults.get(feat, 15.0)
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_research_{feat}",
                                             help="Может превышать 100% для исследовательских центров")
@@ -343,7 +314,7 @@ with st.form("input_form"):
     ]
     for feat in financial_features:
         if feat in feature_order:
-            default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!
+            default_val = csv_defaults.get(feat, 100.0 if "share" in feat or "index" in feat else 100000.0)
             if "share" in feat or "percent" in feat or "index" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
                                             key=f"slider_finance_{feat}",
@@ -363,7 +334,7 @@ with st.form("input_form"):
     for feat in infrastructure_features:
         if feat in feature_order:
             if "share" in feat or "percent" in feat:
-                default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!
+                default_val = csv_defaults.get(feat, 60.0)
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_infra_{feat}",
                                             help="Может превышать 100% для специализированных кафедр")
