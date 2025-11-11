@@ -132,19 +132,12 @@ if uploaded_file is not None:
             st.sidebar.write("**Первые 5 записей:**")
             st.sidebar.dataframe(full_df.head())
         
-        # Кнопка для применения данных
+        # Автоматически применяем данные если они еще не применены
         if not st.session_state.csv_applied:
-            if st.sidebar.button("📊 Применить данные из CSV", type="primary"):
-                st.session_state.use_csv = True
-                st.session_state.bmstu_loaded = False
-                st.session_state.csv_applied = True
-                st.session_state.form_initialized = False  # Сбрасываем для перерисовки
-                st.rerun()
-        else:
-            st.sidebar.success("✅ Данные из CSV применены")
-
-    st.session_state.use_csv = True
-    st.rerun()
+            st.session_state.use_csv = True
+            st.session_state.csv_applied = True
+            st.session_state.form_initialized = False
+            st.rerun()
 # # Кнопка для заполнения данными Бауманки в сайдбаре
 # if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
 #     # Данные для Бауманки
@@ -181,22 +174,28 @@ if uploaded_file is not None:
 #     st.session_state.bmstu_loaded = True
 #     st.rerun()
 # После превью данных ДОБАВЬТЕ:
-if st.sidebar.button("🔄 Применить данные из CSV", type="primary"):
-    st.session_state.use_csv = True
-    st.session_state.bmstu_loaded = False
-    st.rerun()
+
 # Форма ввода данных
+# Принудительное обновление формы при применении CSV данных
 if st.session_state.get('use_csv', False) and st.session_state.get('csv_data'):
     if not st.session_state.get('form_initialized', False):
         st.session_state.form_initialized = True
         st.rerun()
+
+# Форма ввода данных
 with st.form("input_form"):
+    # Показываем статус применения данных
+    if st.session_state.get("use_csv", False) and st.session_state.get("csv_data", {}):
+        st.info("📊 Используются данные из загруженного CSV файла")
+    
     st.write("Введите данные по вузу:")
     input_data = {}
     
     # Если есть данные из CSV, используем их как значения по умолчанию
     use_csv_data = st.session_state.get("use_csv", False)
     csv_defaults = st.session_state.get("csv_data", {})
+    
+    # ... остальная часть формы БЕЗ ИЗМЕНЕНИЙ
     
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
