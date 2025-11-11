@@ -265,7 +265,7 @@ with st.form("input_form"):
     for feat in international_features:
         if feat in feature_order:
             if use_csv_data and feat in csv_defaults:
-                default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+                default_val = csv_defaults[feat]  # Берем   значение из CSV, даже если оно 0
             else:
                 default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)
     if "share" in feat or "percent" in feat:
