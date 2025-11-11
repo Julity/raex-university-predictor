@@ -33,10 +33,10 @@ class RAPredictor:
     def __init__(self, model_type='best'):
         """  Инициализация предсказателя"""
         possible_paths = [
-            "models",                           # Локальная разработка
-            "app/models",                       # Streamlit Cloud структура 1
-            "../models",                        # Streamlit Cloud структура 2
-            os.path.join(os.path.dirname(__file__), "..", "models")  # Абсолютный путь
+            "/home/juliy030517/raex_project_site/models",  # Абсолютный путь
+            "models",                                   # Относительный путь
+            "../models",                                # На уровень выше
+            "./models",                                 # Текущая директория
         ]
         
         model_path = None

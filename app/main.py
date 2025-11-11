@@ -8,7 +8,18 @@ import io
 #sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 import logging
+
 try:
+    # Конфигурация для PythonAnywhere
+    st.set_page_config(
+        page_title="🎓 RAEX Rank Predictor",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+    # Добавляем пути для PythonAnywhere
+    sys.path.insert(0, '/home/juliy030517/raex_project_site/src')
+    sys.path.insert(0, '/home/juliy030517/raex_project_site')
     # Пытаемся определить, где мы запущены
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
@@ -422,7 +433,7 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
     current_rank = st.session_state["current_rank"]
     st.write(f"Текущий ранг: **{current_rank:.1f}**")
     
-    desired_top = st.slider("В какой топ вы хотите попасть?", 1, 100, min(20, int(current_rank)), key="desired_top")
+    desired_top = st.slider("В какой топ вы хотите попасть?", 1, 1000, min(20, int(current_rank)), key="desired_top")
     
     # Разрешённые для рекомендаций признаки
     improvement_options = {
@@ -483,12 +494,20 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
         with st.spinner("Анализируем возможные улучшения..."):
             try:
                 # Исправленный вызов метода suggest_improvement
-                recommendations, improved_rank = predictor.suggest_improvement(
+                result = predictor.suggest_improvement(
                     user_df,
                     desired_top,
                     current_rank=current_rank,
                     allowed_features=allowed_features
                 )
+                
+                # Распаковываем результат в зависимости от формата
+                if len(result) == 2:
+                    recommendations, improved_rank = result
+                    percent_changes = []  # Создаем пустой список для процентных изменений
+                else:
+                    # Если метод возвращает три элемента
+                    recommendations, improved_rank, percent_changes = result
                 
                 st.markdown("### Рекомендации по улучшению:")
                 
@@ -499,11 +518,30 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
                 
                 if recommendations:
                     st.markdown("📈 Рекомендации:")
-                    for i, (feat, old, new) in enumerate(recommendations, 1):
-                        percent_change = ((new - old) / old * 100) if old > 0 else 0
-                        col1, col2, col3 = st.columns([2, 1, 1])
+                    meaningful_count = 0
+                    
+                    for i, recommendation in enumerate(recommendations, 1):
+                        # Обрабатываем разные форматы рекомендаций
+                        if len(recommendation) == 3:
+                            feat, old, new = recommendation
+                            # Вычисляем процентное изменение
+                            if old > 0:
+                                percent_change = ((new - old) / old * 100)
+                            else:
+                                percent_change = 100 if new > 0 else 0
+                        elif len(recommendation) == 4:
+                            feat, old, new, percent_change = recommendation
+                        else:
+                            continue  # Пропускаем некорректные рекомендации
+                        
+                        # Пропускаем незначимые изменения
+                        if abs(percent_change) < 0.01 or abs(new - old) < 0.1:
+                            continue
+                        
+                        meaningful_count += 1
+                        col1, col2, col3 = st.columns([3, 2, 1])  # Исправлено: 3 колонки
                         with col1:
-                            st.write(f"**{i}. {russian_name(feat)}**")
+                            st.write(f"**{meaningful_count}. {russian_name(feat)}**")
                         with col2:
                             st.write(f"`{old:.2f} → {new:.2f}`")
                         with col3:
@@ -511,6 +549,9 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
                         
                         progress_value = min(100, max(0, percent_change / 2 + 50))
                         st.progress(progress_value / 100)
+                    
+                    if meaningful_count == 0:
+                        st.info("ℹ️ Не найдено значимых рекомендаций для улучшения. Попробуйте выбрать другие группы показателей.")
                 else:
                     st.info("ℹ️ Не найдено конкретных рекомендаций для улучшения.")
                     
