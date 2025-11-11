@@ -104,6 +104,10 @@ if 'use_csv' not in st.session_state:
     st.session_state.use_csv = False
 if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
+if 'file_uploaded' not in st.session_state:
+    st.session_state.file_uploaded = False
+if 'form_auto_updated' not in st.session_state:
+    st.session_state.form_auto_updated = False
 
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
@@ -111,6 +115,7 @@ if uploaded_file is not None:
     if result:
         csv_data, full_df = result
         st.session_state.csv_data = csv_data
+        st.session_state.file_uploaded = True  # Устанавливаем флаг загрузки файла
         st.sidebar.success("✅ Данные из CSV готовы к использованию")
         
         # Показываем превью данных
@@ -122,7 +127,8 @@ if uploaded_file is not None:
         if st.sidebar.button("📊 Использовать данные из CSV"):
             st.session_state.use_csv = True
             st.rerun()
-    # Автоматическое обновление формы при загрузке файла
+
+# Автоматическое обновление формы при загрузке файла - ВЫНЕСЕНО ОТДЕЛЬНО
 if st.session_state.get('file_uploaded', False) and not st.session_state.get('form_auto_updated', False):
     st.session_state.use_csv = True
     st.session_state.form_auto_updated = True
@@ -396,6 +402,8 @@ if submitted and predictor is not None:
     st.session_state["submitted"] = True
     st.session_state["use_csv"] = False  # Сбрасываем флаг использования CSV
     st.session_state["bmstu_loaded"] = False  # Сбрасываем флаг Бауманки
+    st.session_state["file_uploaded"] = False  # Сбрасываем флаг загрузки файла
+    st.session_state["form_auto_updated"] = False  # Сбрасываем флаг автообновления
     
     
 
@@ -589,6 +597,8 @@ with st.sidebar:
         st.session_state.csv_data = {}
         st.session_state.bmstu_loaded = False
         st.session_state.submitted = False
+        st.session_state.file_uploaded = False
+        st.session_state.form_auto_updated = False
         st.rerun()
     
     # Показать все необходимые признаки
