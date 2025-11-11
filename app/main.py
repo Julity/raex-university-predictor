@@ -212,9 +212,7 @@ with st.form("input_form"):
     for feat in academic_features:
         if feat in feature_order:
             default_val = get_default(feat, csv_defaults, use_csv_data)  # ВСЕГО ОДНА СТРОКА!            if "egescore" in feat:
-                input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
-                                            key=f"slider_academic_{feat}",
-                                            help="Максимум 120 для учета олимпиадников с 100+ баллами")
+                input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, key=f"slider_academic_{feat}", help="Максимум 120 для учета олимпиадников с 100+ баллами")
             elif "olympiad" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
                                                 key=f"num_academic_{feat}",
