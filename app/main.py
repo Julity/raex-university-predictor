@@ -106,23 +106,32 @@ if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
 
 # Обработка загруженного CSV файла
+# Обработка загруженного CSV файла
 if uploaded_file is not None:
+    # Сбрасываем флаги при новой загрузке файла
+    if 'previous_file' not in st.session_state or st.session_state.previous_file != uploaded_file.name:
+        st.session_state.use_csv = False
+        st.session_state.bmstu_loaded = False
+        st.session_state.previous_file = uploaded_file.name
+    
     result = process_csv_file(uploaded_file)
     if result:
         csv_data, full_df = result
         st.session_state.csv_data = csv_data
         st.sidebar.success("✅ Данные из CSV готовы к использованию")
         
+        # Автоматически применяем данные из CSV
+        if not st.session_state.get('use_csv', False):
+            st.session_state.use_csv = True
+            st.rerun()
+        
         # Показываем превью данных
         if st.sidebar.checkbox("Показать превью данных"):
             st.sidebar.write("**Первые 5 записей:**")
             st.sidebar.dataframe(full_df.head())
-        
-        # Кнопка для использования данных из CSV
-        if st.sidebar.button("📊 Использовать данные из CSV"):
-            st.session_state.use_csv = True
-            st.rerun()
 
+    st.session_state.use_csv = True
+    st.rerun()
 # # Кнопка для заполнения данными Бауманки в сайдбаре
 # if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
 #     # Данные для Бауманки
@@ -158,7 +167,11 @@ if uploaded_file is not None:
 #     st.session_state.use_csv = True
 #     st.session_state.bmstu_loaded = True
 #     st.rerun()
-
+# После превью данных ДОБАВЬТЕ:
+if st.sidebar.button("🔄 Применить данные из CSV", type="primary"):
+    st.session_state.use_csv = True
+    st.session_state.bmstu_loaded = False
+    st.rerun()
 # Форма ввода данных
 with st.form("input_form"):
     st.write("Введите данные по вузу:")
