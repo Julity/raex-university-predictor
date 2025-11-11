@@ -195,8 +195,7 @@ with st.form("input_form"):
     use_csv_data = st.session_state.get("use_csv", False)
     csv_defaults = st.session_state.get("csv_data", {})
     
-    # ... остальная часть формы БЕЗ ИЗМЕНЕНИЙ
-    
+ 
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
         if st.session_state.get("bmstu_loaded", False):
@@ -212,8 +211,10 @@ with st.form("input_form"):
     ]
     for feat in academic_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
-            if "egescore" in feat:
+            if use_csv_data and feat in csv_defaults:
+                default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+            else:
+                default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)            if "egescore" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
                                             key=f"slider_academic_{feat}",
                                             help="Максимум 120 для учета олимпиадников с 100+ баллами")
@@ -234,8 +235,11 @@ with st.form("input_form"):
     ]
     for feat in target_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 10.0 if "share" in feat else (2.0 if "aspirants" in feat else 15.0))
-            if "share" in feat or "percent" in feat:
+            if use_csv_data and feat in csv_defaults:
+                default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+            else:
+                default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)
+    if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_target_{feat}",
                                             help="Может превышать 100% для специализированных программ")
@@ -260,8 +264,11 @@ with st.form("input_form"):
     ]
     for feat in international_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 5.0 if "share" in feat else (2 if feat == "foreign_professors" else 2.0))
-            if "share" in feat or "percent" in feat:
+            if use_csv_data and feat in csv_defaults:
+                default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+            else:
+                default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)
+    if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
                                             key=f"slider_int_{feat}",
                                             help="Может превышать 100% для международных программ")
@@ -295,7 +302,10 @@ with st.form("input_form"):
     for feat in research_features:
         if feat in feature_order:
             if "share" in feat or "percent" in feat:
-                default_val = csv_defaults.get(feat, 15.0)
+                if use_csv_data and feat in csv_defaults:
+                    default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+                else:
+                    default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_research_{feat}",
                                             help="Может превышать 100% для исследовательских центров")
@@ -343,8 +353,11 @@ with st.form("input_form"):
     ]
     for feat in financial_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 100.0 if "share" in feat or "index" in feat else 100000.0)
-            if "share" in feat or "percent" in feat or "index" in feat:
+            if use_csv_data and feat in csv_defaults:
+                default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+            else:
+                default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)
+    if "share" in feat or "percent" in feat or "index" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
                                             key=f"slider_finance_{feat}",
                                             help="Может достигать 500% для высокооплачиваемых специальностей")
@@ -363,7 +376,10 @@ with st.form("input_form"):
     for feat in infrastructure_features:
         if feat in feature_order:
             if "share" in feat or "percent" in feat:
-                default_val = csv_defaults.get(feat, 60.0)
+                if use_csv_data and feat in csv_defaults:
+                    default_val = csv_defaults[feat]  # Берем значение из CSV, даже если оно 0
+                else:
+                    default_val = 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0)
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_infra_{feat}",
                                             help="Может превышать 100% для специализированных кафедр")
