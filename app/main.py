@@ -104,31 +104,44 @@ if 'use_csv' not in st.session_state:
     st.session_state.use_csv = False
 if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
+# ДОБАВЬТЕ в начало инициализации session_state:
+if 'form_initialized' not in st.session_state:
+    st.session_state.form_initialized = False
+if 'csv_applied' not in st.session_state:
+    st.session_state.csv_applied = False
 
-# Обработка загруженного CSV файла
+# ЗАМЕНИТЕ весь блок CSV обработки на:
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
     # Сбрасываем флаги при новой загрузке файла
-    if 'previous_file' not in st.session_state or st.session_state.previous_file != uploaded_file.name:
+    if 'current_file' not in st.session_state or st.session_state.current_file != uploaded_file.name:
         st.session_state.use_csv = False
         st.session_state.bmstu_loaded = False
-        st.session_state.previous_file = uploaded_file.name
+        st.session_state.csv_applied = False
+        st.session_state.form_initialized = False
+        st.session_state.current_file = uploaded_file.name
     
     result = process_csv_file(uploaded_file)
     if result:
         csv_data, full_df = result
         st.session_state.csv_data = csv_data
-        st.sidebar.success("✅ Данные из CSV готовы к использованию")
+        st.sidebar.success("✅ Файл успешно загружен!")
         
-        # Автоматически применяем данные из CSV
-        if not st.session_state.get('use_csv', False):
-            st.session_state.use_csv = True
-            st.rerun()
-        
-        # Показываем превью данных
+        # Показываем превью
         if st.sidebar.checkbox("Показать превью данных"):
             st.sidebar.write("**Первые 5 записей:**")
             st.sidebar.dataframe(full_df.head())
+        
+        # Кнопка для применения данных
+        if not st.session_state.csv_applied:
+            if st.sidebar.button("📊 Применить данные из CSV", type="primary"):
+                st.session_state.use_csv = True
+                st.session_state.bmstu_loaded = False
+                st.session_state.csv_applied = True
+                st.session_state.form_initialized = False  # Сбрасываем для перерисовки
+                st.rerun()
+        else:
+            st.sidebar.success("✅ Данные из CSV применены")
 
     st.session_state.use_csv = True
     st.rerun()
@@ -173,6 +186,10 @@ if st.sidebar.button("🔄 Применить данные из CSV", type="prim
     st.session_state.bmstu_loaded = False
     st.rerun()
 # Форма ввода данных
+if st.session_state.get('use_csv', False) and st.session_state.get('csv_data'):
+    if not st.session_state.get('form_initialized', False):
+        st.session_state.form_initialized = True
+        st.rerun()
 with st.form("input_form"):
     st.write("Введите данные по вузу:")
     input_data = {}
