@@ -122,6 +122,11 @@ if uploaded_file is not None:
         if st.sidebar.button("📊 Использовать данные из CSV"):
             st.session_state.use_csv = True
             st.rerun()
+    # Автоматическое обновление формы при загрузке файла
+if st.session_state.get('file_uploaded', False) and not st.session_state.get('form_auto_updated', False):
+    st.session_state.use_csv = True
+    st.session_state.form_auto_updated = True
+    st.rerun()
 
 # # Кнопка для заполнения данными Бауманки в сайдбаре
 # if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
