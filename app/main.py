@@ -8,18 +8,7 @@ import io
 #sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 import logging
-
 try:
-    # Конфигурация для PythonAnywhere
-    st.set_page_config(
-        page_title="🎓 RAEX Rank Predictor",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-
-    # Добавляем пути для PythonAnywhere
-    sys.path.insert(0, '/home/juliy030517/raex_project_site/src')
-    sys.path.insert(0, '/home/juliy030517/raex_project_site')
     # Пытаемся определить, где мы запущены
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
