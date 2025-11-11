@@ -103,20 +103,7 @@ def process_csv_file(uploaded_file):
         st.error(f"Ошибка при обработке файла: {e}")
         return None
 
-# Функция для обновления формы данными из CSV
-def update_form_with_csv_data():
-    if st.session_state.get("use_csv", False) and st.session_state.get("csv_data"):
-        st.session_state["form_updated"] = True
-
-# Загрузка CSV файла
-st.sidebar.header("📁 Загрузка данных")
-uploaded_file = st.sidebar.file_uploader(
-    "Загрузите CSV файл с данными вузов", 
-    type=['csv'],
-    help="Файл должен содержать все 42 признака в отдельных колонках"
-)
-
-# Инициализация session_state для данных CSV
+# Инициализация session_state
 if 'csv_data' not in st.session_state:
     st.session_state.csv_data = {}
 if 'use_csv' not in st.session_state:
@@ -125,6 +112,20 @@ if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
 if 'form_updated' not in st.session_state:
     st.session_state.form_updated = False
+if 'input_data' not in st.session_state:
+    st.session_state.input_data = {}
+if 'submitted' not in st.session_state:
+    st.session_state.submitted = False
+if 'current_rank' not in st.session_state:
+    st.session_state.current_rank = None
+
+# Загрузка CSV файла
+st.sidebar.header("📁 Загрузка данных")
+uploaded_file = st.sidebar.file_uploader(
+    "Загрузите CSV файл с данными вузов", 
+    type=['csv'],
+    help="Файл должен содержать все 42 признака в отдельных колонках"
+)
 
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
@@ -142,28 +143,64 @@ if uploaded_file is not None:
         # Кнопка для использования данных из CSV
         if st.sidebar.button("📊 Использовать данные из CSV"):
             st.session_state.use_csv = True
-            update_form_with_csv_data()
+            st.session_state.form_updated = True
             st.rerun()
+
+# Функция для получения значений по умолчанию для формы
+def get_default_value(feat, csv_defaults, use_csv_data):
+    if use_csv_data and feat in csv_defaults:
+        return safe_convert(csv_defaults[feat])
+    
+    # Значения по умолчанию для разных типов признаков
+    if "egescore" in feat:
+        return 60.0
+    elif "olympiad" in feat:
+        return 10
+    elif feat == "competition":
+        return 5.0
+    elif "share" in feat or "percent" in feat:
+        return 10.0
+    elif "aspirants" in feat:
+        return 2.0
+    elif feat == "foreign_professors":
+        return 2
+    elif feat == "niokr_total":
+        return 50000.0
+    elif feat == "niokr_per_npr":
+        return 200.0
+    elif "publications" in feat:
+        return 100
+    elif "citations" in feat:
+        return 500
+    elif "income" in feat or "salary" in feat:
+        return 100000.0
+    elif feat == "journals_published":
+        return 2
+    elif feat == "grants_per_100_npr":
+        return 5.0
+    elif feat == "npr_per_100_students":
+        return 8.0
+    elif feat == "lib_books_per_student":
+        return 100
+    elif feat == "area_per_student":
+        return 15.0
+    elif feat == "pc_per_student":
+        return 0.5
+    else:
+        return 10.0
 
 # Форма ввода данных
 with st.form("input_form"):
-    # Принудительно обновляем значения если нужно
-    if st.session_state.get("form_updated", False):
-        st.session_state["form_updated"] = False
-    
     st.write("Введите данные по вузу:")
     input_data = {}
     
-    # Если есть данные из CSV, используем их как значения по умолчанию
+    # Используем данные из CSV если установлен флаг
     use_csv_data = st.session_state.get("use_csv", False)
     csv_defaults = st.session_state.get("csv_data", {})
     
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
-        if st.session_state.get("bmstu_loaded", False):
-            st.info("🎯 Используются данные МГТУ им. Баумана за 2023 год")
-        else:
-            st.info("📊 Используются данные из загруженного CSV файла")
+        st.info("📊 Используются данные из загруженного CSV файла")
     
     # Группировка признаков для лучшего UX
     st.subheader("📊 Академические показатели")
@@ -173,8 +210,7 @@ with st.form("input_form"):
     ]
     for feat in academic_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
-            default_val = safe_convert(default_val)
+            default_val = get_default_value(feat, csv_defaults, use_csv_data)
             
             if "egescore" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
@@ -197,8 +233,7 @@ with st.form("input_form"):
     ]
     for feat in target_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 10.0 if "share" in feat else (2.0 if "aspirants" in feat else 15.0))
-            default_val = safe_convert(default_val)
+            default_val = get_default_value(feat, csv_defaults, use_csv_data)
             
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
@@ -225,8 +260,7 @@ with st.form("input_form"):
     ]
     for feat in international_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 5.0 if "share" in feat else (2 if feat == "foreign_professors" else 2.0))
-            default_val = safe_convert(default_val)
+            default_val = get_default_value(feat, csv_defaults, use_csv_data)
             
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
@@ -261,8 +295,7 @@ with st.form("input_form"):
     ]
     for feat in research_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 15.0)
-            default_val = safe_convert(default_val)
+            default_val = get_default_value(feat, csv_defaults, use_csv_data)
             
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
@@ -304,8 +337,7 @@ with st.form("input_form"):
     ]
     for feat in financial_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 100.0 if "share" in feat or "index" in feat else 100000.0)
-            default_val = safe_convert(default_val)
+            default_val = get_default_value(feat, csv_defaults, use_csv_data)
             
             if "share" in feat or "percent" in feat or "index" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
@@ -325,8 +357,7 @@ with st.form("input_form"):
     ]
     for feat in infrastructure_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 60.0)
-            default_val = safe_convert(default_val)
+            default_val = get_default_value(feat, csv_defaults, use_csv_data)
             
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
@@ -416,41 +447,24 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
     # Разрешённые для рекомендаций признаки
     improvement_options = {
         "Академические показатели": [
-            'egescore_avg',           #  СРЕДНИЙ БАЛЛ ЕГЭ - можно повысить через профориентацию, подготовительные курсы
-            'olympiad_winners',       #  ПОБЕДИТЕЛИ ОЛИМПИАД - активная работа со школьными олимпиадами, создание своих олимпиад
-            'competition',            #  КОНКУРС НА МЕСТО - маркетинг, привлекательные программы, увеличение плана приема
-            'target_admission_share', #  ЦЕЛЕВОЙ ПРИЕМ - сотрудничество с предприятиями, госзаказ
-            'magistracy_share',       #  ДОЛЯ МАГИСТРАТУРЫ - развитие магистерских программ
-            'external_masters'        #  МАГИСТРАНТЫ ИЗ ДРУГИХ ВУЗОВ - программы переподготовки, сетевые программы
+            'egescore_avg', 'olympiad_winners', 'competition',
+            'target_admission_share', 'magistracy_share', 'external_masters'
         ],
         "Международная деятельность": [
-            'foreign_students_share',    #  ИНОСТРАННЫЕ СТУДЕНТЫ - рекрутинг, англоязычные программы, визовая поддержка
-            'foreign_professors',        #  ИНОСТРАННЫЕ ПРОФЕССОРА - программы приглашения, международные гранты
-            'mobility_outbound',         #  СТАЖИРОВКИ ЗА РУБЕЖОМ - партнерства с зарубежными вузами, программы обмена
-            'foreign_edu_income',        #  ДОХОДЫ ОТ ИНОСТРАНЦЕВ - платное образование для иностранцев
-            'foreign_niokr_income'       #  МЕЖДУНАРОДНЫЕ НИОКР - участие в международных исследовательских проектах
+            'foreign_students_share', 'foreign_professors', 'mobility_outbound',
+            'foreign_edu_income', 'foreign_niokr_income'
         ],
         "Научно-исследовательская деятельность": [
-            'scopus_publications',      # ПУБЛИКАЦИИ SCOPUS - гранты на публикации, мотивация преподавателей
-            'niokr_total',              #  ОБЪЕМ НИОКР - активное участие в грантах, хоздоговорные работы
-            'grants_per_100_npr',       #  ГРАНТЫ НА ПРЕПОДАВАТЕЛЯ - обучение подаче заявок, внутренние гранты
-            'journals_published',       #  НАУЧНЫЕ ЖУРНАЛЫ - создание собственных журналов, индексируемых в базах
-            'risc_publications'         #  ПУБЛИКАЦИИ РИНЦ - поддержка российских научных изданий
+            'scopus_publications', 'niokr_total', 'grants_per_100_npr',
+            'journals_published', 'risc_publications'
         ],
         "Финансовые показатели": [
-            'total_income_per_student',  # ДОХОД НА СТУДЕНТА - платные услуги, эндаумент-фонды, коммерциализация разработок
-            'self_income_per_npr',       #  ХОЗРАСЧЕТ НА ПРЕПОДАВАТЕЛЯ - коммерческие проекты, консалтинг
-            'self_income_share',         #  ДОЛЯ ВНЕБЮДЖЕТНЫХ ДОХОДОВ - развитие платных образовательных услуг
-
+            'total_income_per_student', 'self_income_per_npr', 'self_income_share'
         ],
         "Инфраструктура и кадры": [
-            'npr_with_degree_percent',   #  ПРЕПОДАВАТЕЛИ С УЧЕНОЙ СТЕПЕНЬЮ - программы аспирантуры, поддержка защиты
-            'young_npr_share',           #  МОЛОДЫЕ ПРЕПОДАВАТЕЛИ - программы привлечения молодых ученых
-            'area_per_student',          #  ПЛОЩАДЬ НА СТУДЕНТА - строительство, реновация, эффективное использование
-            'pc_per_student',            #  КОМПЬЮТЕРЫ НА СТУДЕНТА - обновление компьютерного парка
-            'lib_books_per_student'      #  БИБЛИОТЕЧНЫЙ ФОНД - пополнение библиотек, электронные ресурсы
+            'npr_with_degree_percent', 'young_npr_share', 'area_per_student',
+            'pc_per_student', 'lib_books_per_student'
         ]
-
     }
     
     st.markdown("Выберите группы признаков для улучшения:")
@@ -467,11 +481,10 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
     
     if st.button("🔄 Найти рекомендации по улучшению", key="improve_btn"):
         user_df = pd.DataFrame([st.session_state["input_data"]])
-        user_df = user_df[feature_order]  # Убедимся в правильном порядке
+        user_df = user_df[feature_order]
         
         with st.spinner("Анализируем возможные улучшения..."):
             try:
-                # Исправленный вызов метода suggest_improvement
                 result = predictor.suggest_improvement(
                     user_df,
                     desired_top,
@@ -479,12 +492,10 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
                     allowed_features=allowed_features
                 )
                 
-                # Распаковываем результат в зависимости от формата
                 if len(result) == 2:
                     recommendations, improved_rank = result
-                    percent_changes = []  # Создаем пустой список для процентных изменений
+                    percent_changes = []
                 else:
-                    # Если метод возвращает три элемента
                     recommendations, improved_rank, percent_changes = result
                 
                 st.markdown("### Рекомендации по улучшению:")
@@ -499,10 +510,8 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
                     meaningful_count = 0
                     
                     for i, recommendation in enumerate(recommendations, 1):
-                        # Обрабатываем разные форматы рекомендаций
                         if len(recommendation) == 3:
                             feat, old, new = recommendation
-                            # Вычисляем процентное изменение
                             if old > 0:
                                 percent_change = ((new - old) / old * 100)
                             else:
@@ -510,14 +519,13 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
                         elif len(recommendation) == 4:
                             feat, old, new, percent_change = recommendation
                         else:
-                            continue  # Пропускаем некорректные рекомендации
+                            continue
                         
-                        # Пропускаем незначимые изменения
                         if abs(percent_change) < 0.01 or abs(new - old) < 0.1:
                             continue
                         
                         meaningful_count += 1
-                        col1, col2, col3 = st.columns([3, 2, 1])  # Исправлено: 3 колонки
+                        col1, col2, col3 = st.columns([3, 2, 1])
                         with col1:
                             st.write(f"**{meaningful_count}. {russian_name(feat)}**")
                         with col2:
@@ -541,7 +549,6 @@ elif predictor is None:
 
 # Информация о модели в сайдбаре
 with st.sidebar:
-   
     st.header("📁 Формат CSV файла")
     st.write("""
     CSV файл должен содержать колонки со следующими названиями:
@@ -555,7 +562,7 @@ with st.sidebar:
     @st.cache_data
     def create_template_csv():
         template_df = pd.DataFrame(columns=feature_order)
-        template_df.loc[0] = [0] * len(feature_order)  # Добавляем строку с нулями
+        template_df.loc[0] = [0] * len(feature_order)
         return template_df.to_csv(index=False, encoding='utf-8')
     
     template_csv = create_template_csv()
@@ -569,11 +576,9 @@ with st.sidebar:
     
     # Кнопка для сброса формы
     if st.button("🔄 Сбросить форму"):
-        st.session_state.use_csv = False
-        st.session_state.csv_data = {}
-        st.session_state.bmstu_loaded = False
-        st.session_state.submitted = False
-        st.session_state.form_updated = False
+        for key in list(st.session_state.keys()):
+            if key not in ['_rerun', '_pages']:
+                del st.session_state[key]
         st.rerun()
     
     # Показать все необходимые признаки
