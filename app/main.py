@@ -4,6 +4,7 @@ import pandas as pd
 import sys
 import os
 import io
+import numpy as np
 
 #sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
@@ -43,6 +44,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 st.set_page_config(page_title="🎓 RAEX Rank Predictor", layout="wide")
 st.title("🎓 RAEX Rank Predictor - Универсальная модель")
 
+# Функция для безопасного преобразования значений
+def safe_convert(value, default=0):
+    try:
+        if pd.isna(value) or value is None:
+            return default
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
 # Инициализация предсказателя
 @st.cache_resource
 def load_predictor():
@@ -53,7 +63,6 @@ def load_predictor():
         return None
 
 predictor = load_predictor()
-
 
 # Функция для проверки и обработки CSV файла
 def process_csv_file(uploaded_file):
@@ -77,8 +86,13 @@ def process_csv_file(uploaded_file):
             st.info("Убедитесь, что файл содержит все необходимые колонки")
             return None
         
+        # Заполняем пропущенные значения
+        df = df.fillna(0)
+        
         # Выбираем первую строку (первый вуз) для предсказания
-        sample_data = df.iloc[0][feature_order].to_dict()
+        sample_data = {}
+        for feat in feature_order:
+            sample_data[feat] = safe_convert(df.iloc[0][feat])
         
         st.success(f"✅ Файл успешно загружен! Записей: {len(df)}")
         st.info(f"📝 Используются данные первого вуза из файла")
@@ -88,6 +102,11 @@ def process_csv_file(uploaded_file):
     except Exception as e:
         st.error(f"Ошибка при обработке файла: {e}")
         return None
+
+# Функция для обновления формы данными из CSV
+def update_form_with_csv_data():
+    if st.session_state.get("use_csv", False) and st.session_state.get("csv_data"):
+        st.session_state["form_updated"] = True
 
 # Загрузка CSV файла
 st.sidebar.header("📁 Загрузка данных")
@@ -104,11 +123,8 @@ if 'use_csv' not in st.session_state:
     st.session_state.use_csv = False
 if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
-
-# Добавьте эту функцию для обновления формы
-def update_form_with_csv_data():
-    if st.session_state.get("use_csv", False) and st.session_state.get("csv_data"):
-        st.session_state["form_updated"] = True
+if 'form_updated' not in st.session_state:
+    st.session_state.form_updated = False
 
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
@@ -126,28 +142,30 @@ if uploaded_file is not None:
         # Кнопка для использования данных из CSV
         if st.sidebar.button("📊 Использовать данные из CSV"):
             st.session_state.use_csv = True
-            update_form_with_csv_data()  # Добавьте этот вызов
+            update_form_with_csv_data()
             st.rerun()
 
-# В начале формы добавьте проверку обновления
+# Форма ввода данных
 with st.form("input_form"):
     # Принудительно обновляем значения если нужно
     if st.session_state.get("form_updated", False):
         st.session_state["form_updated"] = False
-        # Форма автоматически пересоздастся с новыми значениями
     
     st.write("Введите данные по вузу:")
     input_data = {}
     
-    # Используем актуальные данные из session_state
+    # Если есть данные из CSV, используем их как значения по умолчанию
     use_csv_data = st.session_state.get("use_csv", False)
     csv_defaults = st.session_state.get("csv_data", {})
     
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
-        st.info("📊 Используются данные из загруженного CSV файла")
+        if st.session_state.get("bmstu_loaded", False):
+            st.info("🎯 Используются данные МГТУ им. Баумана за 2023 год")
+        else:
+            st.info("📊 Используются данные из загруженного CSV файла")
     
-    # Остальной код формы остается без изменений...
+    # Группировка признаков для лучшего UX
     st.subheader("📊 Академические показатели")
     academic_features = [
         'egescore_avg', 'egescore_contract', 'egescore_min', 
@@ -155,16 +173,13 @@ with st.form("input_form"):
     ]
     for feat in academic_features:
         if feat in feature_order:
-            # Важно: используем актуальные значения из session_state
-            current_default = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
+            default_val = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
+            default_val = safe_convert(default_val)
             
             if "egescore" in feat:
-                input_data[feat] = st.slider(
-                    russian_name(feat), 0.0, 120.0, float(current_default), step=0.1,
-                    key=f"slider_{feat}"  # Уникальный ключ для каждого слайдера
-                )
-            # ... остальные элементы формы
-            
+                input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
+                                            key=f"slider_academic_{feat}",
+                                            help="Максимум 120 для учета олимпиадников с 100+ баллами")
             elif "olympiad" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
                                                 key=f"num_academic_{feat}",
@@ -183,6 +198,8 @@ with st.form("input_form"):
     for feat in target_features:
         if feat in feature_order:
             default_val = csv_defaults.get(feat, 10.0 if "share" in feat else (2.0 if "aspirants" in feat else 15.0))
+            default_val = safe_convert(default_val)
+            
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_target_{feat}",
@@ -209,6 +226,8 @@ with st.form("input_form"):
     for feat in international_features:
         if feat in feature_order:
             default_val = csv_defaults.get(feat, 5.0 if "share" in feat else (2 if feat == "foreign_professors" else 2.0))
+            default_val = safe_convert(default_val)
+            
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
                                             key=f"slider_int_{feat}",
@@ -242,44 +261,38 @@ with st.form("input_form"):
     ]
     for feat in research_features:
         if feat in feature_order:
+            default_val = csv_defaults.get(feat, 15.0)
+            default_val = safe_convert(default_val)
+            
             if "share" in feat or "percent" in feat:
-                default_val = csv_defaults.get(feat, 15.0)
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_research_{feat}",
                                             help="Может превышать 100% для исследовательских центров")
             elif feat == "niokr_total":
-                default_val = csv_defaults.get(feat, 50000.0)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 50000000.0, float(default_val), step=100000.0, 
                                                 key=f"num_niokr_total",
                                                 help="До 50 млн руб. для крупных исследовательских проектов")
             elif feat == "niokr_per_npr":
-                default_val = csv_defaults.get(feat, 200.0)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 500000.0, float(default_val), step=1000.0, 
                                                 key=f"num_niokr_per_npr",
                                                 help="До 500 тыс. руб. на преподавателя в ведущих научных центрах")
             elif "publications" in feat:
-                default_val = csv_defaults.get(feat, 100)
-                max_val = 100000 if feat == "scopus_publications" else 500000
-                input_data[feat] = st.number_input(russian_name(feat), 0, max_val, int(default_val), 
+                input_data[feat] = st.number_input(russian_name(feat), 0, 100000, int(default_val), 
                                                 key=f"num_{feat}",
-                                                help=f"До {max_val} публикаций для крупных исследовательских университетов")
+                                                help="До 100000 публикаций для крупных исследовательских университетов")
             elif "citations" in feat:
-                default_val = csv_defaults.get(feat, 500)
                 input_data[feat] = st.number_input(russian_name(feat), 0, 1000000, int(default_val), 
                                                 key=f"num_{feat}",
                                                 help="До 1 млн цитирований для ведущих научных школ")
             elif "income" in feat:
-                default_val = csv_defaults.get(feat, 10000.0)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 100000000.0, float(default_val), step=100000.0, 
                                                 key=f"num_{feat}",
                                                 help="До 100 млн руб. доходов от международных исследований")
             elif feat == "journals_published":
-                default_val = csv_defaults.get(feat, 2)
                 input_data[feat] = st.number_input(russian_name(feat), 0, 500, int(default_val), 
                                                 key=f"num_journals",
                                                 help="До 500 журналов для крупных издательских центров")
             elif feat == "grants_per_100_npr":
-                default_val = csv_defaults.get(feat, 5.0)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
                                                 key=f"num_grants",
                                                 help="До 500 грантов на 100 преподавателей в исследовательских вузах")
@@ -292,6 +305,8 @@ with st.form("input_form"):
     for feat in financial_features:
         if feat in feature_order:
             default_val = csv_defaults.get(feat, 100.0 if "share" in feat or "index" in feat else 100000.0)
+            default_val = safe_convert(default_val)
+            
             if "share" in feat or "percent" in feat or "index" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
                                             key=f"slider_finance_{feat}",
@@ -310,31 +325,30 @@ with st.form("input_form"):
     ]
     for feat in infrastructure_features:
         if feat in feature_order:
+            default_val = csv_defaults.get(feat, 60.0)
+            default_val = safe_convert(default_val)
+            
             if "share" in feat or "percent" in feat:
-                default_val = csv_defaults.get(feat, 60.0)
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_infra_{feat}",
                                             help="Может превышать 100% для специализированных кафедр")
             elif feat == "npr_per_100_students":
-                default_val = csv_defaults.get(feat, 8.0)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 100.0, float(default_val), step=0.1, 
                                                 key=f"num_npr_per_100",
                                                 help="До 100 преподавателей на 100 студентов в магистратуре/аспирантуре")
             elif feat == "lib_books_per_student":
-                default_val = csv_defaults.get(feat, 100)
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
                                                 key=f"num_lib_books",
                                                 help="До 5000 книг на студента в вузах с богатыми библиотеками")
             elif feat == "area_per_student":
-                default_val = csv_defaults.get(feat, 15.0)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
                                                 key=f"num_area",
                                                 help="До 500 м² на студента в кампусных университетах")
             elif feat == "pc_per_student":
-                default_val = csv_defaults.get(feat, 0.5)
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 10.0, float(default_val), step=0.1, 
                                                 key=f"num_pc",
                                                 help="До 10 компьютеров на студента в IT-вузах")
+    
     # Кнопка отправки формы
     submitted = st.form_submit_button("🔢 Предсказать место")
 
@@ -369,8 +383,6 @@ if submitted and predictor is not None:
     st.session_state["use_csv"] = False  # Сбрасываем флаг использования CSV
     st.session_state["bmstu_loaded"] = False  # Сбрасываем флаг Бауманки
     
-    
-
     user_df = pd.DataFrame([input_data])
     
     # Убедимся, что все признаки присутствуют и в правильном порядке
@@ -561,6 +573,7 @@ with st.sidebar:
         st.session_state.csv_data = {}
         st.session_state.bmstu_loaded = False
         st.session_state.submitted = False
+        st.session_state.form_updated = False
         st.rerun()
     
     # Показать все необходимые признаки
