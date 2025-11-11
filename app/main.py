@@ -105,6 +105,11 @@ if 'use_csv' not in st.session_state:
 if 'bmstu_loaded' not in st.session_state:
     st.session_state.bmstu_loaded = False
 
+# Добавьте эту функцию для обновления формы
+def update_form_with_csv_data():
+    if st.session_state.get("use_csv", False) and st.session_state.get("csv_data"):
+        st.session_state["form_updated"] = True
+
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
     result = process_csv_file(uploaded_file)
@@ -121,61 +126,28 @@ if uploaded_file is not None:
         # Кнопка для использования данных из CSV
         if st.sidebar.button("📊 Использовать данные из CSV"):
             st.session_state.use_csv = True
+            update_form_with_csv_data()  # Добавьте этот вызов
             st.rerun()
 
-# # Кнопка для заполнения данными Бауманки в сайдбаре
-# if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
-#     # Данные для Бауманки
-#     bmstu_data = {
-#         # Академические показатели
-#         'egescore_avg': 80.83, 'egescore_contract': 71.98, 'egescore_min': 54.55,
-#         'olympiad_winners': 8, 'olympiad_other': 236, 'competition': 5.0,
-#         # Целевой прием и магистратура
-#         'target_admission_share': 13.59, 'target_contract_in_tech': 20.37,
-#         'magistracy_share': 10.30, 'aspirantura_share': 2.70,
-#         'external_masters': 98.72, 'external_grad_share': 47.70,
-#         'aspirants_per_100_students': 3.70,
-#         # Международная деятельность
-#         'foreign_students_share': 5.71, 'foreign_non_cis': 3.70, 'foreign_cis': 2.01,
-#         'foreign_graduated': 7.66, 'mobility_outbound': 0.07,
-#         'foreign_staff_share': 0.22, 'foreign_professors': 0,
-#         # Научная деятельность
-#         'niokr_total': 3982904.40, 'niokr_share_total': 22.40, 'niokr_own_share': 84.29,
-#         'niokr_per_npr': 1919.01, 'scopus_publications': 160.44, 'risc_publications': 160.44,
-#         'risc_citations': 409.68, 'foreign_niokr_income': 0.00, 'journals_published': 13,
-#         'grants_per_100_npr': 2.84,
-#         # Финансовые показатели
-#         'foreign_edu_income': 31664.10, 'total_income_per_student': 827.28,
-#         'self_income_per_npr': 1939.98, 'self_income_share': 22.59,
-#         'ppc_salary_index': 200.57, 'avg_salary_grads': 100.0,
-#         # Инфраструктура и кадры
-#         'npr_with_degree_percent': 62.89, 'npr_per_100_students': 5.77,
-#         'young_npr_share': 13.63, 'lib_books_per_student': 106.41,
-#         'area_per_student': 10.36, 'pc_per_student': 0.36
-#     }
-    
-#     st.session_state.csv_data = bmstu_data
-#     st.session_state.use_csv = True
-#     st.session_state.bmstu_loaded = True
-#     st.rerun()
-
-# Форма ввода данных
+# В начале формы добавьте проверку обновления
 with st.form("input_form"):
+    # Принудительно обновляем значения если нужно
+    if st.session_state.get("form_updated", False):
+        st.session_state["form_updated"] = False
+        # Форма автоматически пересоздастся с новыми значениями
+    
     st.write("Введите данные по вузу:")
     input_data = {}
     
-    # Если есть данные из CSV, используем их как значения по умолчанию
+    # Используем актуальные данные из session_state
     use_csv_data = st.session_state.get("use_csv", False)
     csv_defaults = st.session_state.get("csv_data", {})
     
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
-        if st.session_state.get("bmstu_loaded", False):
-            st.info("🎯 Используются данные МГТУ им. Баумана за 2023 год")
-        else:
-            st.info("📊 Используются данные из загруженного CSV файла")
+        st.info("📊 Используются данные из загруженного CSV файла")
     
-        # Группировка признаков для лучшего UX
+    # Остальной код формы остается без изменений...
     st.subheader("📊 Академические показатели")
     academic_features = [
         'egescore_avg', 'egescore_contract', 'egescore_min', 
@@ -183,11 +155,16 @@ with st.form("input_form"):
     ]
     for feat in academic_features:
         if feat in feature_order:
-            default_val = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
+            # Важно: используем актуальные значения из session_state
+            current_default = csv_defaults.get(feat, 60.0 if "egescore" in feat else (10 if "olympiad" in feat else 5.0))
+            
             if "egescore" in feat:
-                input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
-                                            key=f"slider_academic_{feat}",
-                                            help="Максимум 120 для учета олимпиадников с 100+ баллами")
+                input_data[feat] = st.slider(
+                    russian_name(feat), 0.0, 120.0, float(current_default), step=0.1,
+                    key=f"slider_{feat}"  # Уникальный ключ для каждого слайдера
+                )
+            # ... остальные элементы формы
+            
             elif "olympiad" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
                                                 key=f"num_academic_{feat}",
