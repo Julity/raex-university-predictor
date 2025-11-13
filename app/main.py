@@ -42,7 +42,62 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 st.set_page_config(page_title="🎓 RAEX Rank Predictor", layout="wide")
 st.title("🎓 RAEX Rank Predictor - Универсальная модель")
+# Данные для ДГТУ и ДонНТУ
+DGSU_DATA = {
+    # Академические показатели
+    'egescore_avg': 64.13, 'egescore_min': 45.26, 'egescore_contract': 64.13,
+    'olympiad_winners': 0, 'olympiad_other': 1, 'competition': 3.0,
+    # Целевой прием и магистратура
+    'target_admission_share': 1.44, 'target_contract_in_tech': 1.99,
+    'magistracy_share': 13.32, 'aspirantura_share': 2.65,
+    'external_masters': 19.62, 'external_grad_share': 52.66,
+    'aspirants_per_100_students': 2.65,
+    # Международная деятельность
+    'foreign_students_share': 8.53, 'foreign_non_cis': 6.34, 'foreign_cis': 2.19,
+    'foreign_graduated': 11.19, 'mobility_outbound': 0.21,
+    'foreign_staff_share': 0.11, 'foreign_professors': 4,
+    # Научная деятельность
+    'niokr_total': 636449.5, 'niokr_share_total': 7.53, 'niokr_own_share': 97.25,
+    'niokr_per_npr': 361.38, 'scopus_publications': 0, 'risc_publications': 122.42,
+    'risc_citations': 346.76, 'foreign_niokr_income': 0, 'journals_published': 10,
+    'grants_per_100_npr': 1.53,
+    # Финансовые показатели
+    'foreign_edu_income': 155646.5, 'total_income_per_student': 401.42,
+    'self_income_per_npr': 1195.27, 'self_income_share': 25.56,
+    'ppc_salary_index': 208.17, 'avg_salary_grads': 82740,
+    # Инфраструктура и кадры
+    'npr_with_degree_percent': 65.66, 'npr_per_100_students': 3.81,
+    'young_npr_share': 12.5, 'lib_books_per_student': 70.44,
+    'area_per_student': 8.46, 'pc_per_student': 0.18
+}
 
+DONNTU_DATA = {
+    # Академические показатели
+    'egescore_avg': 79.10, 'egescore_contract': 70.74, 'egescore_min': 69.00,
+    'olympiad_winners': 0, 'olympiad_other': 2, 'competition': 5.0,
+    # Целевой прием и магистратура
+    'target_admission_share': 0.00, 'target_contract_in_tech': 0.00,
+    'magistracy_share': 21.72, 'aspirantura_share': 2.76,
+    'external_masters': 7.35, 'external_grad_share': 91.03,
+    'aspirants_per_100_students': 4.21,
+    # Международная деятельность
+    'foreign_students_share': 0.06, 'foreign_non_cis': 0.00, 'foreign_cis': 0.06,
+    'foreign_graduated': 0.26, 'mobility_outbound': 0.00,
+    'foreign_staff_share': 0.00, 'foreign_professors': 0,
+    # Научная деятельность
+    'niokr_total': 56943.10, 'niokr_share_total': 3.27, 'niokr_own_share': 0.00,
+    'niokr_per_npr': 134.02, 'scopus_publications': 150, 'risc_publications': 25.42,
+    'risc_citations': 890.09, 'foreign_niokr_income': 0.00, 'journals_published': 5,
+    'grants_per_100_npr': 0.00,
+    # Финансовые показатели
+    'foreign_edu_income': 0.00, 'total_income_per_student': 494.30,
+    'self_income_per_npr': 185.09, 'self_income_share': 4.54,
+    'ppc_salary_index': 0.00, 'avg_salary_grads': 75000,
+    # Инфраструктура и кадры
+    'npr_with_degree_percent': 60.54, 'npr_per_100_students': 5.28,
+    'young_npr_share': 6.94, 'lib_books_per_student': 346.45,
+    'area_per_student': 33.71, 'pc_per_student': 0.83
+}
 # Инициализация предсказателя
 @st.cache_resource
 def load_predictor():
@@ -209,6 +264,24 @@ def get_default_value(feat, csv_defaults, use_csv_data):
 
 # Форма ввода данных
 with st.form("input_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🏛️ Заполнить данные ДГТУ", type="primary", use_container_width=True):
+            st.session_state.csv_data = DGSU_DATA
+            st.session_state.use_csv = True
+            st.session_state.bmstu_loaded = False
+            st.session_state.csv_loaded = True
+            st.rerun()
+
+    with col2:
+        if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True):
+            st.session_state.csv_data = DONNTU_DATA
+            st.session_state.use_csv = True
+            st.session_state.bmstu_loaded = False
+            st.session_state.csv_loaded = True
+            st.rerun()
+
+    st.markdown("---")
     st.write("Введите данные по вузу:")
     input_data = {}
     
