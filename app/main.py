@@ -146,46 +146,34 @@ def process_csv_file(uploaded_file):
         return None
 
 # Инициализация session_state
+# Инициализация session_state
 if 'csv_data' not in st.session_state:
     st.session_state.csv_data = {}
 if 'use_csv' not in st.session_state:
     st.session_state.use_csv = False
-if 'bmstu_loaded' not in st.session_state:
-    st.session_state.bmstu_loaded = False
-if 'csv_loaded' not in st.session_state:
-    st.session_state.csv_loaded = False
 if 'university_loaded' not in st.session_state:
     st.session_state.university_loaded = None
-if 'force_rerun' not in st.session_state:
-    st.session_state.force_rerun = False
+if 'form_key' not in st.session_state:
+    st.session_state.form_key = 0  # Ключ для принудительного обновления формы
+
 
 # Обработка кнопок университетов
 col1, col2 = st.columns(2)
 with col1:
-    if st.button("🏛️ Заполнить данные ДГТУ", type="primary", use_container_width=True):
+    if st.button("🏛️ Заполнить данные ДГТУ", type="primary", use_container_width=True, key="btn_dgsu"):
         st.session_state.csv_data = DGSU_DATA
         st.session_state.use_csv = True
-        st.session_state.bmstu_loaded = False
-        st.session_state.csv_loaded = True
         st.session_state.university_loaded = "ДГТУ"
-        st.session_state.force_rerun = True
-        try:
-            st.rerun()
-        except Exception as e:
-            st.error(f"Ошибка обновления: {e}")
+        st.session_state.form_key += 1  # Изменяем ключ формы
+        st.success("✅ Данные ДГТУ загружены!")
 
 with col2:
-    if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True):
+    if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True, key="btn_donntu"):
         st.session_state.csv_data = DONNTU_DATA
         st.session_state.use_csv = True
-        st.session_state.bmstu_loaded = False
-        st.session_state.csv_loaded = True
         st.session_state.university_loaded = "ДонНТУ"
-        st.session_state.force_rerun = True
-        try:
-            st.rerun()
-        except Exception as e:
-            st.error(f"Ошибка обновления: {e}")
+        st.session_state.form_key += 1  # Изменяем ключ формы
+        st.success("✅ Данные ДонНТУ загружены!")
 
 st.markdown("---")
 
@@ -268,8 +256,10 @@ def get_default_value(feat, csv_defaults, use_csv_data):
 if st.session_state.get('force_rerun', False):
     st.session_state.force_rerun = False
 
+form_key = f"input_form_{st.session_state.form_key}"
+
 # Форма ввода данных
-with st.form("input_form"):
+with st.form(form_key):
     st.write("Введите данные по вузу:")
     input_data = {}
     
@@ -291,17 +281,18 @@ with st.form("input_form"):
     for feat in academic_features:
         if feat in feature_order:
             default_val = get_default_value(feat, csv_defaults, use_csv_data)
+            widget_key = f"{feat}_{st.session_state.form_key}"  # Уникальный ключ для каждого виджета
             if "egescore" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 120.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Максимум 120 для учета олимпиадников с 100+ баллами")
             elif "olympiad" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 5000 человек для крупных вузов")
             elif feat == "competition":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 100.0, float(default_val), step=0.1, 
-                                            key=f"slider_competition",
+                                            key=widget_key,
                                             help="Конкурс может достигать 100 человек на место в престижных вузах")
 
     st.subheader("🎯 Целевой прием и магистратура")
@@ -480,7 +471,13 @@ if submitted:
         st.error(f"❌ Не заполнены следующие признаки: {missing_features}")
         st.info("Пожалуйста, заполните все поля формы")
         st.stop()
-
+if st.sidebar.button("🔄 Сбросить форму", key="btn_reset"):
+    st.session_state.use_csv = False
+    st.session_state.csv_data = {}
+    st.session_state.university_loaded = None
+    st.session_state.form_key += 1
+    st.session_state.submitted = False
+    st.sidebar.success("✅ Форма сброшена!")
 # Обработка предсказания
 if submitted and predictor is not None:
     st.session_state["input_data"] = input_data
