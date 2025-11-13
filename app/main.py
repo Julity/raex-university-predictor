@@ -42,6 +42,7 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 st.set_page_config(page_title="🎓 RAEX Rank Predictor", layout="wide")
 st.title("🎓 RAEX Rank Predictor - Универсальная модель")
+
 # Данные для ДГТУ и ДонНТУ
 DGSU_DATA = {
     # Академические показатели
@@ -98,6 +99,7 @@ DONNTU_DATA = {
     'young_npr_share': 6.94, 'lib_books_per_student': 346.45,
     'area_per_student': 33.71, 'pc_per_student': 0.83
 }
+
 # Инициализация предсказателя
 @st.cache_resource
 def load_predictor():
@@ -143,6 +145,26 @@ def process_csv_file(uploaded_file):
         st.error(f"Ошибка при обработке файла: {e}")
         return None
 
+# Кнопки для быстрого заполнения данных университетов
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("🏛️ Заполнить данные ДГТУ", type="primary", use_container_width=True):
+        st.session_state.csv_data = DGSU_DATA
+        st.session_state.use_csv = True
+        st.session_state.bmstu_loaded = False
+        st.session_state.csv_loaded = True
+        st.rerun()
+
+with col2:
+    if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True):
+        st.session_state.csv_data = DONNTU_DATA
+        st.session_state.use_csv = True
+        st.session_state.bmstu_loaded = False
+        st.session_state.csv_loaded = True
+        st.rerun()
+
+st.markdown("---")
+
 # Загрузка CSV файла
 st.sidebar.header("📁 Загрузка данных")
 uploaded_file = st.sidebar.file_uploader(
@@ -182,42 +204,6 @@ if st.sidebar.button("📊 Использовать данные из CSV", type
         st.rerun()
     else:
         st.sidebar.warning("❌ Сначала загрузите CSV файл")
-
-# # Кнопка для заполнения данными Бауманки в сайдбаре
-# if st.sidebar.button("🎯 Заполнить данные МГТУ им. Баумана (2023)"):
-#     # Данные для Бауманки
-#     bmstu_data = {
-#         # Академические показатели
-#         'egescore_avg': 80.83, 'egescore_contract': 71.98, 'egescore_min': 54.55,
-#         'olympiad_winners': 8, 'olympiad_other': 236, 'competition': 5.0,
-#         # Целевой прием и магистратура
-#         'target_admission_share': 13.59, 'target_contract_in_tech': 20.37,
-#         'magistracy_share': 10.30, 'aspirantura_share': 2.70,
-#         'external_masters': 98.72, 'external_grad_share': 47.70,
-#         'aspirants_per_100_students': 3.70,
-#         # Международная деятельность
-#         'foreign_students_share': 5.71, 'foreign_non_cis': 3.70, 'foreign_cis': 2.01,
-#         'foreign_graduated': 7.66, 'mobility_outbound': 0.07,
-#         'foreign_staff_share': 0.22, 'foreign_professors': 0,
-#         # Научная деятельность
-#         'niokr_total': 3982904.40, 'niokr_share_total': 22.40, 'niokr_own_share': 84.29,
-#         'niokr_per_npr': 1919.01, 'scopus_publications': 160.44, 'risc_publications': 160.44,
-#         'risc_citations': 409.68, 'foreign_niokr_income': 0.00, 'journals_published': 13,
-#         'grants_per_100_npr': 2.84,
-#         # Финансовые показатели
-#         'foreign_edu_income': 31664.10, 'total_income_per_student': 827.28,
-#         'self_income_per_npr': 1939.98, 'self_income_share': 22.59,
-#         'ppc_salary_index': 200.57, 'avg_salary_grads': 100.0,
-#         # Инфраструктура и кадры
-#         'npr_with_degree_percent': 62.89, 'npr_per_100_students': 5.77,
-#         'young_npr_share': 13.63, 'lib_books_per_student': 106.41,
-#         'area_per_student': 10.36, 'pc_per_student': 0.36
-#     }
-    
-#     st.session_state.csv_data = bmstu_data
-#     st.session_state.use_csv = True
-#     st.session_state.bmstu_loaded = True
-#     st.rerun()
 
 # Функция для получения значения по умолчанию с учетом CSV данных
 def get_default_value(feat, csv_defaults, use_csv_data):
@@ -264,24 +250,6 @@ def get_default_value(feat, csv_defaults, use_csv_data):
 
 # Форма ввода данных
 with st.form("input_form"):
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🏛️ Заполнить данные ДГТУ", type="primary", use_container_width=True):
-            st.session_state.csv_data = DGSU_DATA
-            st.session_state.use_csv = True
-            st.session_state.bmstu_loaded = False
-            st.session_state.csv_loaded = True
-            st.rerun()
-
-    with col2:
-        if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True):
-            st.session_state.csv_data = DONNTU_DATA
-            st.session_state.use_csv = True
-            st.session_state.bmstu_loaded = False
-            st.session_state.csv_loaded = True
-            st.rerun()
-
-    st.markdown("---")
     st.write("Введите данные по вузу:")
     input_data = {}
     
@@ -294,7 +262,14 @@ with st.form("input_form"):
         if st.session_state.get("bmstu_loaded", False):
             st.info("🎯 Используются данные МГТУ им. Баумана за 2023 год")
         else:
-            st.info("📊 Используются данные из загруженного CSV файла")
+            university_name = "загруженного CSV файла"
+            # Определяем какой университет загружен
+            if csv_defaults.get('egescore_avg') == 64.13 and csv_defaults.get('foreign_students_share') == 8.53:
+                university_name = "ДГТУ"
+            elif csv_defaults.get('egescore_avg') == 79.10 and csv_defaults.get('foreign_students_share') == 0.06:
+                university_name = "ДонНТУ"
+            
+            st.info(f"📊 Используются данные {university_name}")
     
     # Группировка признаков для лучшего UX
     st.subheader("📊 Академические показатели")
