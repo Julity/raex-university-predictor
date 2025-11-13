@@ -169,7 +169,10 @@ with col1:
         st.session_state.csv_loaded = True
         st.session_state.university_loaded = "ДГТУ"
         st.session_state.force_rerun = True
-        st.rerun()
+        try:
+            st.rerun()
+        except Exception as e:
+            st.error(f"Ошибка обновления: {e}")
 
 with col2:
     if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True):
@@ -179,7 +182,10 @@ with col2:
         st.session_state.csv_loaded = True
         st.session_state.university_loaded = "ДонНТУ"
         st.session_state.force_rerun = True
-        st.rerun()
+        try:
+            st.rerun()
+        except Exception as e:
+            st.error(f"Ошибка обновления: {e}")
 
 st.markdown("---")
 
