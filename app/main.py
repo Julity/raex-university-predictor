@@ -304,6 +304,7 @@ with st.form(form_key):
     for feat in target_features:
         if feat in feature_order:
             default_val = get_default_value(feat, csv_defaults, use_csv_data)
+            widget_key = f"{feat}_{st.session_state.form_key}"
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
                                             key=f"slider_{feat}",
@@ -330,29 +331,30 @@ with st.form(form_key):
     for feat in international_features:
         if feat in feature_order:
             default_val = get_default_value(feat, csv_defaults, use_csv_data)
+            widget_key = f"{feat}_{st.session_state.form_key}"
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% для международных программ")
             elif feat == "foreign_professors":
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 5000 иностранных преподавателей для крупных международных вузов")
             elif feat == "foreign_non_cis":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Доля иностранцев вне СНГ может быть высокой в международных вузах")
             elif feat == "foreign_cis":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Доля иностранцев из СНГ")
             elif feat == "foreign_graduated":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Доля окончивших иностранцев")
             elif feat == "mobility_outbound":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 150.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% при множественных стажировках")
 
     st.subheader("🔬 Научная деятельность")
@@ -364,37 +366,38 @@ with st.form(form_key):
     for feat in research_features:
         if feat in feature_order:
             default_val = get_default_value(feat, csv_defaults, use_csv_data)
+            widget_key = f"{feat}_{st.session_state.form_key}"
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% для исследовательских центров")
             elif feat == "niokr_total":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 50000000.0, float(default_val), step=100000.0, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 50 млн руб. для крупных исследовательских проектов")
             elif feat == "niokr_per_npr":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 500000.0, float(default_val), step=1000.0, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 500 тыс. руб. на преподавателя в ведущих научных центрах")
             elif "publications" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0, 100000, int(default_val), 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 100000 публикаций для крупных исследовательских университетов")
             elif "citations" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0, 1000000, int(default_val), 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 1 млн цитирований для ведущих научных школ")
             elif "income" in feat:
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 100000000.0, float(default_val), step=100000.0, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 100 млн руб. доходов от международных исследований")
             elif feat == "journals_published":
                 input_data[feat] = st.number_input(russian_name(feat), 0, 500, int(default_val), 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 500 журналов для крупных издательских центров")
             elif feat == "grants_per_100_npr":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 500 грантов на 100 преподавателей в исследовательских вузах")
 
     st.subheader("💰 Финансовые показатели")
@@ -405,15 +408,16 @@ with st.form(form_key):
     for feat in financial_features:
         if feat in feature_order:
             default_val = get_default_value(feat, csv_defaults, use_csv_data)
+            widget_key = f"{feat}_{st.session_state.form_key}"
             if "share" in feat or "percent" in feat or "index" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может достигать 500% для высокооплачиваемых специальностей")
             elif "income" in feat or "salary" in feat:
                 max_val = 10000000.0 if feat == "total_income_per_student" else 5000000.0
                 step_val = 10000.0 if feat == "total_income_per_student" else 5000.0
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, max_val, float(default_val), step=step_val, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help=f"До {max_val:,.0f} руб. для ведущих вузов с высокими доходами")
 
     st.subheader("🏫 Инфраструктура и кадры")
@@ -424,25 +428,26 @@ with st.form(form_key):
     for feat in infrastructure_features:
         if feat in feature_order:
             default_val = get_default_value(feat, csv_defaults, use_csv_data)
+            widget_key = f"{feat}_{st.session_state.form_key}"
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% для специализированных кафедр")
             elif feat == "npr_per_100_students":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 100.0, float(default_val), step=0.1, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 100 преподавателей на 100 студентов в магистратуре/аспирантуре")
             elif feat == "lib_books_per_student":
                 input_data[feat] = st.number_input(russian_name(feat), 0, 5000, int(default_val), 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 5000 книг на студента в вузах с богатыми библиотеками")
             elif feat == "area_per_student":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 500.0, float(default_val), step=1.0, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 500 м² на студента в кампусных университетах")
             elif feat == "pc_per_student":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 10.0, float(default_val), step=0.1, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 10 компьютеров на студента в IT-вузах")
     
     # Кнопка отправки формы
