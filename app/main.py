@@ -145,7 +145,21 @@ def process_csv_file(uploaded_file):
         st.error(f"Ошибка при обработке файла: {e}")
         return None
 
-# Кнопки для быстрого заполнения данных университетов
+# Инициализация session_state
+if 'csv_data' not in st.session_state:
+    st.session_state.csv_data = {}
+if 'use_csv' not in st.session_state:
+    st.session_state.use_csv = False
+if 'bmstu_loaded' not in st.session_state:
+    st.session_state.bmstu_loaded = False
+if 'csv_loaded' not in st.session_state:
+    st.session_state.csv_loaded = False
+if 'university_loaded' not in st.session_state:
+    st.session_state.university_loaded = None
+if 'force_rerun' not in st.session_state:
+    st.session_state.force_rerun = False
+
+# Обработка кнопок университетов
 col1, col2 = st.columns(2)
 with col1:
     if st.button("🏛️ Заполнить данные ДГТУ", type="primary", use_container_width=True):
@@ -153,6 +167,8 @@ with col1:
         st.session_state.use_csv = True
         st.session_state.bmstu_loaded = False
         st.session_state.csv_loaded = True
+        st.session_state.university_loaded = "ДГТУ"
+        st.session_state.force_rerun = True
         st.rerun()
 
 with col2:
@@ -161,6 +177,8 @@ with col2:
         st.session_state.use_csv = True
         st.session_state.bmstu_loaded = False
         st.session_state.csv_loaded = True
+        st.session_state.university_loaded = "ДонНТУ"
+        st.session_state.force_rerun = True
         st.rerun()
 
 st.markdown("---")
@@ -173,16 +191,6 @@ uploaded_file = st.sidebar.file_uploader(
     help="Файл должен содержать все 42 признака в отдельных колонках"
 )
 
-# Инициализация session_state для данных CSV
-if 'csv_data' not in st.session_state:
-    st.session_state.csv_data = {}
-if 'use_csv' not in st.session_state:
-    st.session_state.use_csv = False
-if 'bmstu_loaded' not in st.session_state:
-    st.session_state.bmstu_loaded = False
-if 'csv_loaded' not in st.session_state:
-    st.session_state.csv_loaded = False
-
 # Обработка загруженного CSV файла
 if uploaded_file is not None:
     result = process_csv_file(uploaded_file)
@@ -190,6 +198,7 @@ if uploaded_file is not None:
         csv_data, full_df = result
         st.session_state.csv_data = csv_data
         st.session_state.csv_loaded = True
+        st.session_state.university_loaded = "из CSV файла"
         st.sidebar.success("✅ Данные из CSV готовы к использованию")
         
         # Показываем превью данных
@@ -201,6 +210,7 @@ if uploaded_file is not None:
 if st.sidebar.button("📊 Использовать данные из CSV", type="primary"):
     if st.session_state.csv_loaded:
         st.session_state.use_csv = True
+        st.session_state.force_rerun = True
         st.rerun()
     else:
         st.sidebar.warning("❌ Сначала загрузите CSV файл")
@@ -248,6 +258,10 @@ def get_default_value(feat, csv_defaults, use_csv_data):
     else:
         return 10.0
 
+# Сбрасываем флаг после rerun
+if st.session_state.get('force_rerun', False):
+    st.session_state.force_rerun = False
+
 # Форма ввода данных
 with st.form("input_form"):
     st.write("Введите данные по вузу:")
@@ -259,17 +273,8 @@ with st.form("input_form"):
     
     # Отображаем информацию о загруженных данных
     if use_csv_data and csv_defaults:
-        if st.session_state.get("bmstu_loaded", False):
-            st.info("🎯 Используются данные МГТУ им. Баумана за 2023 год")
-        else:
-            university_name = "загруженного CSV файла"
-            # Определяем какой университет загружен
-            if csv_defaults.get('egescore_avg') == 64.13 and csv_defaults.get('foreign_students_share') == 8.53:
-                university_name = "ДГТУ"
-            elif csv_defaults.get('egescore_avg') == 79.10 and csv_defaults.get('foreign_students_share') == 0.06:
-                university_name = "ДонНТУ"
-            
-            st.info(f"📊 Используются данные {university_name}")
+        university_name = st.session_state.get("university_loaded", "загруженного CSV файла")
+        st.info(f"📊 Используются данные {university_name}")
     
     # Группировка признаков для лучшего UX
     st.subheader("📊 Академические показатели")
@@ -476,6 +481,7 @@ if submitted and predictor is not None:
     st.session_state["submitted"] = True
     st.session_state["use_csv"] = False  # Сбрасываем флаг использования CSV
     st.session_state["bmstu_loaded"] = False  # Сбрасываем флаг Бауманки
+    st.session_state["university_loaded"] = None
     
     user_df = pd.DataFrame([input_data])
     
@@ -644,10 +650,11 @@ with st.sidebar:
         st.session_state.bmstu_loaded = False
         st.session_state.submitted = False
         st.session_state.csv_loaded = False
+        st.session_state.university_loaded = None
         st.rerun()
     
     # Показать все необходимые признаки
     if st.checkbox("Показать все необходимые признаки"):
-        st.write("**Всего признаков:**", len(feature_order))
+        st.write("Всего признаков:", len(feature_order))
         for i, feat in enumerate(feature_order, 1):
             st.write(f"{i}. {russian_name(feat)} ({feat})")
