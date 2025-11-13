@@ -307,19 +307,19 @@ with st.form(form_key):
             widget_key = f"{feat}_{st.session_state.form_key}"
             if "share" in feat or "percent" in feat:
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% для специализированных программ")
             elif feat == "aspirants_per_100_students":
                 input_data[feat] = st.number_input(russian_name(feat), 0.0, 100.0, float(default_val), step=0.1, 
-                                                key=f"num_{feat}",
+                                                key=widget_key,
                                                 help="До 100 аспирантов на 100 студентов для исследовательских вузов")
             elif feat == "external_masters":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% для программ переподготовки")
             elif feat == "target_contract_in_tech":
                 input_data[feat] = st.slider(russian_name(feat), 0.0, 200.0, float(default_val), step=0.1, 
-                                            key=f"slider_{feat}",
+                                            key=widget_key,
                                             help="Может превышать 100% для технических специализаций")
 
     st.subheader("🌍 Международная деятельность")
