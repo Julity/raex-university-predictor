@@ -169,7 +169,7 @@ with col1:
         st.session_state.csv_loaded = True
         st.session_state.university_loaded = "ДГТУ"
         st.session_state.force_rerun = True
-        st.experimental_rerun()
+        st.rerun()
 
 with col2:
     if st.button("🎓 Заполнить данные ДонНТУ", type="secondary", use_container_width=True):
@@ -179,7 +179,7 @@ with col2:
         st.session_state.csv_loaded = True
         st.session_state.university_loaded = "ДонНТУ"
         st.session_state.force_rerun = True
-        st.experimental_rerun()
+        st.rerun()
 
 st.markdown("---")
 
