@@ -506,7 +506,7 @@ if submitted and predictor is not None:
         try:
             rank = predictor.predict_rank(user_df)
             st.session_state["current_rank"] = rank
-            st.success(f"🏆 Пргнозируемое место: **{rank:.1f}**")
+            st.success(f"🏆 Прогнозируемое место: **{rank:.1f}**")
         except Exception as e:
             st.error(f"Ошибка при прогнозироании: {e}")
             st.write("Проверьте, что все поля заполнены корректно")
