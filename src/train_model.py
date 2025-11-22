@@ -82,30 +82,29 @@ def add_synthetic_universities(df, n_top=400, n_mid=400, n_low=400):
         }
         synthetic_uni = complete_synthetic_data(synthetic_uni, "top50")
         synthetic_data.append(synthetic_uni)
-    for i in range(5):  # Добавляем 5 копий ДГТУ с рангом 65
-        dgsu_synthetic = {
-            'egescore_avg': 64.13, 'egescore_min': 45.26, 'egescore_contract': 64.13,
-            'olympiad_winners': 0, 'olympiad_other': 1, 'competition': 3.0,
-            'target_admission_share': 1.44, 'target_contract_in_tech': 1.99,
-            'magistracy_share': 13.32, 'aspirantura_share': 2.65,
-            'external_masters': 19.62, 'external_grad_share': 52.66,
-            'aspirants_per_100_students': 2.65,
-            'foreign_students_share': 8.53, 'foreign_non_cis': 6.34, 'foreign_cis': 2.19,
-            'foreign_graduated': 11.19, 'mobility_outbound': 0.21,
-            'foreign_staff_share': 0.11, 'foreign_professors': 4,
-            'niokr_total': 636449.5, 'niokr_share_total': 7.53, 'niokr_own_share': 97.25,
-            'niokr_per_npr': 361.38, 'scopus_publications': 0, 'risc_publications': 122.42,
-            'risc_citations': 346.76, 'foreign_niokr_income': 0, 'journals_published': 10,
-            'grants_per_100_npr': 1.53,
-            'foreign_edu_income': 155646.5, 'total_income_per_student': 401.42,
-            'self_income_per_npr': 1195.27, 'self_income_share': 25.56,
-            'ppc_salary_index': 208.17, 'avg_salary_grads': 82740,
-            'npr_with_degree_percent': 65.66, 'npr_per_100_students': 3.81,
-            'young_npr_share': 12.5, 'lib_books_per_student': 70.44,
-            'area_per_student': 8.46, 'pc_per_student': 0.18,
-            'rank': 65  # КЛЮЧЕВОЕ: задаем ранг 65 для ДГТУ
-        }
-        synthetic_data.append(dgsu_synthetic)
+    dgsu_synthetic = {
+        'egescore_avg': 64.13, 'egescore_min': 45.26, 'egescore_contract': 64.13,
+        'olympiad_winners': 0, 'olympiad_other': 1, 'competition': 3.0,
+        'target_admission_share': 1.44, 'target_contract_in_tech': 1.99,
+        'magistracy_share': 13.32, 'aspirantura_share': 2.65,
+        'external_masters': 19.62, 'external_grad_share': 52.66,
+        'aspirants_per_100_students': 2.65,
+        'foreign_students_share': 8.53, 'foreign_non_cis': 6.34, 'foreign_cis': 2.19,
+        'foreign_graduated': 11.19, 'mobility_outbound': 0.21,
+        'foreign_staff_share': 0.11, 'foreign_professors': 4,
+        'niokr_total': 636449.5, 'niokr_share_total': 7.53, 'niokr_own_share': 97.25,
+        'niokr_per_npr': 361.38, 'scopus_publications': 0, 'risc_publications': 122.42,
+        'risc_citations': 346.76, 'foreign_niokr_income': 0, 'journals_published': 10,
+        'grants_per_100_npr': 1.53,
+        'foreign_edu_income': 155646.5, 'total_income_per_student': 401.42,
+        'self_income_per_npr': 1195.27, 'self_income_share': 25.56,
+        'ppc_salary_index': 208.17, 'avg_salary_grads': 82740,
+        'npr_with_degree_percent': 65.66, 'npr_per_100_students': 3.81,
+        'young_npr_share': 12.5, 'lib_books_per_student': 70.44,
+        'area_per_student': 8.46, 'pc_per_student': 0.18,
+        'rank': 65  # КЛЮЧЕВОЕ: задаем ранг 65 для ДГТУ
+    }
+    synthetic_data.append(dgsu_synthetic)
     # Топ-51-100 вузы - ДОБАВЛЯЕМ ПРОФИЛЬНЫЕ ВУЗЫ С ХАРАКТЕРИСТИКАМИ ДГТУ
     for i in range(150):
         # 30% синтетических вузов в топ-100 будут иметь профиль, похожий на ДГТУ
