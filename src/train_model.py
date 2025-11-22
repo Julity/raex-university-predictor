@@ -107,9 +107,9 @@ def add_synthetic_universities(df, n_top=400, n_mid=400, n_low=400):
         }
         synthetic_data.append(dgsu_synthetic)
     # Топ-51-100 вузы - ДОБАВЛЯЕМ ПРОФИЛЬНЫЕ ВУЗЫ С ХАРАКТЕРИСТИКАМИ ДГТУ
-    for i in range(200):
+    for i in range(150):
         # 30% синтетических вузов в топ-100 будут иметь профиль, похожий на ДГТУ
-        if i < 100:  # Профильные технические вузы
+        if i < 45:  # Профильные технические вузы
             synthetic_uni = {
                 'egescore_avg': np.random.uniform(64, 70),  # Как у ДГТУ
                 'egescore_contract': np.random.uniform(55, 65),
@@ -244,17 +244,6 @@ def complete_synthetic_data(base_data, tier):
             'avg_salary_grads': (70000, 100000),
             'risc_citations': (1500, 3000),
             'foreign_edu_income': (300000, 700000),
-        },
-        "top100": {
-            'target_admission_share': (1.5, 3.5),
-            'magistracy_share': (15.0, 25.0),
-            'aspirantura_share': (20.0, 30.0),
-            'foreign_professors': (20, 60),
-            'niokr_total': (800000, 3000000),
-            'scopus_publications': (300, 1200),
-            'avg_salary_grads': (65000, 90000),
-            'risc_citations': (800, 2000),
-            'foreign_edu_income': (150000, 400000),
         },
         "top": {
             'target_admission_share': (1.8, 3.5),
@@ -521,24 +510,18 @@ def enhanced_transform_target(y):
               np.where(y <= 10, 96 - (y-5)*1.2,       # 6-10 места
               np.where(y <= 20, 90 - (y-10)*1.0,      # 11-20
               np.where(y <= 50, 85 - (y-20)*0.5,      # 21-50
-              np.where(y <= 70, 75 - (y-50)*0.2,      # 51-70 (ДГТУ здесь) - МЕНЬШЕ СКЛОН!
-              np.where(y <= 100, 71 - (y-70)*0.1,     # 71-100 - ОЧЕНЬ МАЛЫЙ СКЛОН
-              np.where(y <= 200, 68 - (y-100)*0.08,   # 101-200 (ДонНТУ здесь)
-              52 - (y-200)*0.15)))))))               # 201+
+              np.where(y <= 70, 75 - (y-50)*0.25,     # 51-70 (ДГТУ здесь) - МЕНЬШЕ СКЛОН!
+              np.where(y <= 100, 70 - (y-70)*0.2,     # 71-100
+              np.where(y <= 200, 62 - (y-100)*0.12,   # 101-200 (ДонНТУ здесь)
+              37 - (y-200)*0.125)))))))               # 201+
     
     return scores
 
 def enhanced_inverse_transform(scores):
     """Обратное преобразование"""
-    ranks = np.where(scores >= 96, 1 + (100 - scores)/0.8,
-             np.where(scores >= 90, 5 + (96 - scores)/1.2,
-             np.where(scores >= 85, 10 + (90 - scores)/1.0,
-             np.where(scores >= 75, 20 + (85 - scores)/0.5,
-             np.where(scores >= 71, 50 + (75 - scores)/0.2,  # ДГТУ диапазон
-             np.where(scores >= 68, 70 + (71 - scores)/0.1,
-             np.where(scores >= 52, 100 + (68 - scores)/0.08,
-             200 + (52 - scores)/0.15)))))))
-    
+    max_rank = 1000
+    min_rank = 1
+    ranks = np.exp(np.log(max_rank + 10) - scores * (np.log(max_rank + 10) - np.log(min_rank + 9)) / 100) - 9
     return ranks.round().astype(int)
 
 def train_and_save_models(data_folder="data", model_folder="models"):
