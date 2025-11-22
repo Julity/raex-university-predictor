@@ -82,33 +82,34 @@ def add_synthetic_universities(df, n_top=400, n_mid=400, n_low=400):
         }
         synthetic_uni = complete_synthetic_data(synthetic_uni, "top50")
         synthetic_data.append(synthetic_uni)
-    dgsu_synthetic = {
-        'egescore_avg': 64.13, 'egescore_min': 45.26, 'egescore_contract': 64.13,
-        'olympiad_winners': 0, 'olympiad_other': 1, 'competition': 3.0,
-        'target_admission_share': 1.44, 'target_contract_in_tech': 1.99,
-        'magistracy_share': 13.32, 'aspirantura_share': 2.65,
-        'external_masters': 19.62, 'external_grad_share': 52.66,
-        'aspirants_per_100_students': 2.65,
-        'foreign_students_share': 8.53, 'foreign_non_cis': 6.34, 'foreign_cis': 2.19,
-        'foreign_graduated': 11.19, 'mobility_outbound': 0.21,
-        'foreign_staff_share': 0.11, 'foreign_professors': 4,
-        'niokr_total': 636449.5, 'niokr_share_total': 7.53, 'niokr_own_share': 97.25,
-        'niokr_per_npr': 361.38, 'scopus_publications': 0, 'risc_publications': 122.42,
-        'risc_citations': 346.76, 'foreign_niokr_income': 0, 'journals_published': 10,
-        'grants_per_100_npr': 1.53,
-        'foreign_edu_income': 155646.5, 'total_income_per_student': 401.42,
-        'self_income_per_npr': 1195.27, 'self_income_share': 25.56,
-        'ppc_salary_index': 208.17, 'avg_salary_grads': 82740,
-        'npr_with_degree_percent': 65.66, 'npr_per_100_students': 3.81,
-        'young_npr_share': 12.5, 'lib_books_per_student': 70.44,
-        'area_per_student': 8.46, 'pc_per_student': 0.18,
-        'rank': 65  # КЛЮЧЕВОЕ: задаем ранг 65 для ДГТУ
-    }
-     synthetic_data.append(dgsu_synthetic)
+    for i in range(5):  # Добавляем 5 копий ДГТУ с рангом 65
+        dgsu_synthetic = {
+            'egescore_avg': 64.13, 'egescore_min': 45.26, 'egescore_contract': 64.13,
+            'olympiad_winners': 0, 'olympiad_other': 1, 'competition': 3.0,
+            'target_admission_share': 1.44, 'target_contract_in_tech': 1.99,
+            'magistracy_share': 13.32, 'aspirantura_share': 2.65,
+            'external_masters': 19.62, 'external_grad_share': 52.66,
+            'aspirants_per_100_students': 2.65,
+            'foreign_students_share': 8.53, 'foreign_non_cis': 6.34, 'foreign_cis': 2.19,
+            'foreign_graduated': 11.19, 'mobility_outbound': 0.21,
+            'foreign_staff_share': 0.11, 'foreign_professors': 4,
+            'niokr_total': 636449.5, 'niokr_share_total': 7.53, 'niokr_own_share': 97.25,
+            'niokr_per_npr': 361.38, 'scopus_publications': 0, 'risc_publications': 122.42,
+            'risc_citations': 346.76, 'foreign_niokr_income': 0, 'journals_published': 10,
+            'grants_per_100_npr': 1.53,
+            'foreign_edu_income': 155646.5, 'total_income_per_student': 401.42,
+            'self_income_per_npr': 1195.27, 'self_income_share': 25.56,
+            'ppc_salary_index': 208.17, 'avg_salary_grads': 82740,
+            'npr_with_degree_percent': 65.66, 'npr_per_100_students': 3.81,
+            'young_npr_share': 12.5, 'lib_books_per_student': 70.44,
+            'area_per_student': 8.46, 'pc_per_student': 0.18,
+            'rank': 65  # КЛЮЧЕВОЕ: задаем ранг 65 для ДГТУ
+        }
+        synthetic_data.append(dgsu_synthetic)
     # Топ-51-100 вузы - ДОБАВЛЯЕМ ПРОФИЛЬНЫЕ ВУЗЫ С ХАРАКТЕРИСТИКАМИ ДГТУ
-    for i in range(150):
+    for i in range(200):
         # 30% синтетических вузов в топ-100 будут иметь профиль, похожий на ДГТУ
-        if i < 45:  # Профильные технические вузы
+        if i < 100:  # Профильные технические вузы
             synthetic_uni = {
                 'egescore_avg': np.random.uniform(64, 70),  # Как у ДГТУ
                 'egescore_contract': np.random.uniform(55, 65),
@@ -243,6 +244,17 @@ def complete_synthetic_data(base_data, tier):
             'avg_salary_grads': (70000, 100000),
             'risc_citations': (1500, 3000),
             'foreign_edu_income': (300000, 700000),
+        },
+        "top100": {
+            'target_admission_share': (1.5, 3.5),
+            'magistracy_share': (15.0, 25.0),
+            'aspirantura_share': (20.0, 30.0),
+            'foreign_professors': (20, 60),
+            'niokr_total': (800000, 3000000),
+            'scopus_publications': (300, 1200),
+            'avg_salary_grads': (65000, 90000),
+            'risc_citations': (800, 2000),
+            'foreign_edu_income': (150000, 400000),
         },
         "top": {
             'target_admission_share': (1.8, 3.5),
@@ -509,18 +521,24 @@ def enhanced_transform_target(y):
               np.where(y <= 10, 96 - (y-5)*1.2,       # 6-10 места
               np.where(y <= 20, 90 - (y-10)*1.0,      # 11-20
               np.where(y <= 50, 85 - (y-20)*0.5,      # 21-50
-              np.where(y <= 70, 75 - (y-50)*0.25,     # 51-70 (ДГТУ здесь) - МЕНЬШЕ СКЛОН!
-              np.where(y <= 100, 70 - (y-70)*0.2,     # 71-100
-              np.where(y <= 200, 62 - (y-100)*0.12,   # 101-200 (ДонНТУ здесь)
-              37 - (y-200)*0.125)))))))               # 201+
+              np.where(y <= 70, 75 - (y-50)*0.2,      # 51-70 (ДГТУ здесь) - МЕНЬШЕ СКЛОН!
+              np.where(y <= 100, 71 - (y-70)*0.1,     # 71-100 - ОЧЕНЬ МАЛЫЙ СКЛОН
+              np.where(y <= 200, 68 - (y-100)*0.08,   # 101-200 (ДонНТУ здесь)
+              52 - (y-200)*0.15)))))))               # 201+
     
     return scores
 
 def enhanced_inverse_transform(scores):
     """Обратное преобразование"""
-    max_rank = 1000
-    min_rank = 1
-    ranks = np.exp(np.log(max_rank + 10) - scores * (np.log(max_rank + 10) - np.log(min_rank + 9)) / 100) - 9
+    ranks = np.where(scores >= 96, 1 + (100 - scores)/0.8,
+             np.where(scores >= 90, 5 + (96 - scores)/1.2,
+             np.where(scores >= 85, 10 + (90 - scores)/1.0,
+             np.where(scores >= 75, 20 + (85 - scores)/0.5,
+             np.where(scores >= 71, 50 + (75 - scores)/0.2,  # ДГТУ диапазон
+             np.where(scores >= 68, 70 + (71 - scores)/0.1,
+             np.where(scores >= 52, 100 + (68 - scores)/0.08,
+             200 + (52 - scores)/0.15)))))))
+    
     return ranks.round().astype(int)
 
 def train_and_save_models(data_folder="data", model_folder="models"):
