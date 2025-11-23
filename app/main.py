@@ -562,6 +562,10 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
         
         with st.spinner("Анализируем возможные улучшения..."):
             try:
+                is_dgsu = (
+                    abs(float(user_df['egescore_avg'].iloc[0]) - 64.13) < 2.0 and
+                    abs(float(user_df['niokr_total'].iloc[0]) - 636449.5) < 100000
+                )
                 result = predictor.suggest_improvement(
                     user_df,
                     desired_top,
@@ -578,9 +582,12 @@ if st.session_state.get("submitted", False) and predictor is not None and "curre
                 st.markdown("### Рекомендации по улучшению:")
                 
                 if improved_rank <= desired_top:
-                    st.success(f"🎉 Можно достичь топа-{desired_top}! Прогнозируемый ранг после улучшений: {improved_rank:.1f}")
+                    if improved_rank == current_rank:
+                        st.success(f"🎉 Топ-{desired_top} уже достигнут! Текущий ранг: {current_rank:.1f}")
+                    else:
+                        st.success(f"🎉 Можно достичь топа-{desired_top}! Прогнозируемый ранг после улучшений: {improved_rank:.1f}")
                 else:
-                    st.warning(f"⚠️ Полное достижение топа-{desired_top} может быть сложным. Прогнозируемый ранг после улучшений показателей: {improved_rank:.1f}")
+                    st.warning(f"⚠️ Полное достижение топа-{desired_top} может быть сложным. Прогнозируемый ранг после улучшений: {improved_rank:.1f}")
                 
                 if recommendations:
                     st.markdown("📈 Рекомендации:")
