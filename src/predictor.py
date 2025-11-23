@@ -386,7 +386,7 @@ class RAPredictor:
         # ЦЕЛЕВЫЕ ЗНАЧЕНИЯ ДЛЯ КОНКРЕТНЫХ ТОПОВ
         improvement_plans = {
             65: {  # Для попадания в топ-65
-                'scopus_publications': 10,           # +150 публикаций
+                'scopus_publications': 8,           # +150 публикаций
                 'niokr_total': 800000,               # ~1 млн руб (увеличение на 57%)
                 'foreign_students_share': 11.0,       # +2.5%
                 'avg_salary_grads': 86000,            # +3k зарплата
